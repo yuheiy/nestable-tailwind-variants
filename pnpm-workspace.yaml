@@ -1,0 +1,10 @@
+engineStrict: true
+
+minimumReleaseAge: 1440
+
+onlyBuiltDependencies:
+  - esbuild
+
+strictDepBuilds: true
+
+strictPeerDependencies: true
