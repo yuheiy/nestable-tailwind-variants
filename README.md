@@ -100,6 +100,12 @@ const button = tv({
 **nestable-tailwind-variants:**
 
 ```tsx
+interface ButtonStyleProps {
+  variant?: 'primary' | 'secondary';
+  isHovered?: boolean;
+  isPressed?: boolean;
+}
+
 const button = ntv<ButtonStyleProps>({
   default: 'rounded font-medium',
   variant: {
