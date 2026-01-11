@@ -57,7 +57,7 @@ function isStyleDefinition(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function evaluateDefinition<Props extends Record<string, unknown>>(
+function evaluateDefinition<Props extends Record<string, any>>(
   definition: StyleDefinition<Props> | string,
   context: EvaluationContext<Props>,
 ): void {
@@ -151,7 +151,7 @@ function joinClasses(...classes: string[]): string {
  */
 export function createNTV(
   options: NTVConfig = {},
-): <Props extends Record<string, unknown>>(style: StyleDefinition<Props>) => StyleFunction<Props> {
+): <Props extends Record<string, any>>(style: StyleDefinition<Props>) => StyleFunction<Props> {
   const { twMerge: useTwMerge = true, twMergeConfig } = options;
 
   const mergeClasses = useTwMerge
@@ -160,7 +160,7 @@ export function createNTV(
       : twMerge
     : joinClasses;
 
-  return function ntv<Props extends Record<string, unknown>>(
+  return function ntv<Props extends Record<string, any>>(
     style: StyleDefinition<Props>,
   ): StyleFunction<Props> {
     return (props) => {
