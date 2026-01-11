@@ -201,6 +201,44 @@ export function createNTV(
 export const ntv = createNTV();
 
 /**
+ * Creates a customized `composeNtv` function with the specified options.
+ *
+ * @example
+ * ```ts
+ * // Disable tailwind-merge
+ * const composeNtvNoMerge = createComposeNtv({ twMerge: false });
+ *
+ * // With custom tailwind-merge config
+ * const customComposeNtv = createComposeNtv({
+ *   twMergeConfig: {
+ *     extend: {
+ *       theme: {
+ *         shadow: ['100', '200', '300'],
+ *       },
+ *     },
+ *   },
+ * });
+ * ```
+ */
+export function createComposeNtv(
+  options: NTVConfig = {},
+): <T extends StyleFunction[]>(
+  ...fns: T
+) => StyleFunction<UnionToIntersection<ExtractProps<T[number]>>> {
+  const { twMerge: useTwMerge = true, twMergeConfig } = options;
+
+  const mergeClasses = useTwMerge
+    ? twMergeConfig
+      ? extendTailwindMerge(twMergeConfig)
+      : twMerge
+    : joinClasses;
+
+  return (...fns) =>
+    (props) =>
+      mergeClasses(...fns.map((fn) => fn(props)));
+}
+
+/**
  * Composes multiple style functions into a single function.
  *
  * @example
@@ -220,8 +258,4 @@ export const ntv = createNTV();
  * // => 'rounded font-medium px-4 py-2 text-lg bg-blue-500 text-white'
  * ```
  */
-export function composeNtv<T extends StyleFunction[]>(
-  ...fns: T
-): StyleFunction<UnionToIntersection<ExtractProps<T[number]>>> {
-  return (props) => twMerge(...fns.map((fn) => fn(props)));
-}
+export const composeNtv = createComposeNtv();

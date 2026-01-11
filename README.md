@@ -193,3 +193,25 @@ const customNTV = createNTV({
   },
 });
 ```
+
+### `createComposeNtv(options)`
+
+Creates a customized `composeNtv` function.
+
+- `options.twMerge` (`boolean`, default: `true`) - Enable tailwind-merge
+- `options.twMergeConfig` (`object`) - Custom tailwind-merge configuration
+- Returns customized `composeNtv` function
+
+```tsx
+const composeNtvNoMerge = createComposeNtv({ twMerge: false });
+
+const customComposeNtv = createComposeNtv({
+  twMergeConfig: {
+    extend: {
+      theme: {
+        shadow: ['100', '200', '300'],
+      },
+    },
+  },
+});
+```

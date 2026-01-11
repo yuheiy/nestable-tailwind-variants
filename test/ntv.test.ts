@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ntv, createNTV, composeNtv } from '../src/ntv';
+import { ntv, createNTV, composeNtv, createComposeNtv } from '../src/ntv';
 
 describe('ntv', () => {
   describe('basic functionality', () => {
@@ -299,5 +299,87 @@ describe('composeNtv', () => {
     const combined = composeNtv(base, extra);
 
     expect(combined({})).toBe('p-4 m-4');
+  });
+});
+
+describe('createComposeNtv', () => {
+  it('should create composeNtv with custom options', () => {
+    const customComposeNtv = createComposeNtv({
+      twMergeConfig: {
+        cacheSize: 100,
+      },
+    });
+    expect(typeof customComposeNtv).toBe('function');
+  });
+
+  it('should work with custom twMergeConfig', () => {
+    const customComposeNtv = createComposeNtv({
+      twMergeConfig: {
+        extend: {
+          classGroups: {
+            'custom-group': ['custom-a', 'custom-b'],
+          },
+        },
+      },
+    });
+
+    const base = ntv<{ isActive?: boolean }>({
+      default: 'custom-a',
+    });
+
+    const overlay = ntv<{ isActive?: boolean }>({
+      isActive: 'custom-b',
+    });
+
+    const combined = customComposeNtv(base, overlay);
+
+    // custom-a and custom-b are in the same group, so custom-b wins
+    expect(combined({ isActive: true })).toBe('custom-b');
+  });
+
+  it('should disable tailwind-merge when twMerge is false', () => {
+    const composeNtvNoMerge = createComposeNtv({ twMerge: false });
+
+    const base = ntv<{ isActive?: boolean }>({
+      default: 'bg-gray-100',
+    });
+
+    const overlay = ntv<{ isActive?: boolean }>({
+      isActive: 'bg-blue-500',
+    });
+
+    const combined = composeNtvNoMerge(base, overlay);
+
+    // With twMerge: false, conflicting classes are NOT resolved
+    expect(combined({ isActive: true })).toBe('bg-gray-100 bg-blue-500');
+  });
+
+  it('should compose multiple style functions with custom config', () => {
+    const customComposeNtv = createComposeNtv({
+      twMergeConfig: {
+        extend: {
+          classGroups: {
+            'my-group': ['my-a', 'my-b', 'my-c'],
+          },
+        },
+      },
+    });
+
+    const first = ntv<{ size?: 'sm' }>({
+      default: 'my-a',
+    });
+
+    const second = ntv<{ size?: 'sm' }>({
+      default: 'my-b',
+    });
+
+    const third = ntv<{ size?: 'sm' }>({
+      default: 'my-c',
+    });
+
+    const combined = customComposeNtv(first, second, third);
+
+    // All three are in the same group, so my-c wins
+    expect(combined({})).toBe('my-c');
   });
 });
