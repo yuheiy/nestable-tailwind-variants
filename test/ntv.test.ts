@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ntv, createNTV, composeNtv } from '../src/ntv.js';
+import { ntv, createNTV, composeNtv } from '../src/ntv';
 
 describe('ntv', () => {
   describe('basic functionality', () => {
