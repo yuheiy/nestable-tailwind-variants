@@ -1,6 +1,6 @@
 # nestable-tailwind-variants
 
-A variant styling library for Tailwind CSS that supports nested condition definitions. Express complex style combinations intuitively through nested objects instead of flat `compoundVariants` patterns.
+A variant styling library for Tailwind CSS that expresses complex style combinations through nested condition definitions instead of flat `compoundVariants` patterns.
 
 Inspired by [React Spectrum's `style` macro](https://react-spectrum.adobe.com/styling), with some ideas from [tailwind-variants](https://www.tailwind-variants.org/).
 
@@ -29,9 +29,7 @@ button({ variant: 'primary' });
 // => 'px-4 py-2 rounded font-medium bg-blue-500 text-white'
 ```
 
-Class conflicts are automatically resolved by [tailwind-merge](https://github.com/dcastil/tailwind-merge).
-
-Boolean conditions starting with `is` or `allows` can be used directly without nesting:
+Boolean conditions starting with `is` or `allows` can be used directly:
 
 ```tsx
 const button = ntv<{ isDisabled?: boolean }>({
@@ -43,37 +41,24 @@ button({ isDisabled: true });
 // => 'bg-gray-300 cursor-not-allowed'
 ```
 
-## Nested Conditions
-
-Nest conditions to define styles that apply when multiple conditions are true.
+Since `ntv` returns a function, it works directly with [React Aria Components](https://react-aria.adobe.com/)' render props:
 
 ```tsx
-interface CardStyleProps {
-  variant?: 'elevated';
-  isHovered?: boolean;
-}
+import { Checkbox, type CheckboxRenderProps } from 'react-aria-components';
+import { ntv } from 'nestable-tailwind-variants';
 
-const card = ntv<CardStyleProps>({
-  variant: {
-    elevated: {
-      default: 'shadow-md',
-      isHovered: 'shadow-xl',
-    },
-  },
-});
-
-card({ variant: 'elevated' });
-// => 'shadow-md'
-
-card({ variant: 'elevated', isHovered: true });
-// => 'shadow-xl'
+<Checkbox
+  className={ntv<CheckboxRenderProps>({
+    default: 'bg-gray-100',
+    isHovered: 'bg-gray-200',
+    isSelected: 'bg-gray-900',
+  })}
+/>;
 ```
 
-When a condition matches at the same level, `default` is skipped. Conditions can be nested to any depth.
+## Why Nested?
 
-## Comparison with tailwind-variants
-
-With tailwind-variants, compound conditions require `compoundVariants`.
+With tailwind-variants, compound conditions require `compoundVariants`:
 
 **tailwind-variants:**
 
@@ -125,7 +110,51 @@ const button = ntv<ButtonStyleProps>({
 
 Nesting groups related styles together, reflecting the logical hierarchy of conditions in your code.
 
-## Composing Styles
+## Guide
+
+### Class Conflict Resolution
+
+Class conflicts are automatically resolved by [tailwind-merge](https://github.com/dcastil/tailwind-merge):
+
+```tsx
+const button = ntv<{ isActive?: boolean }>({
+  default: 'bg-gray-100 p-4',
+  isActive: 'bg-blue-500',
+});
+
+button({ isActive: true });
+// => 'p-4 bg-blue-500'
+```
+
+When `isActive` is true, `bg-gray-100` is automatically replaced by `bg-blue-500`.
+
+### Nested Conditions
+
+Nest conditions to define styles that apply when multiple conditions are true:
+
+```tsx
+interface CardStyleProps {
+  variant?: 'elevated';
+  isHovered?: boolean;
+}
+
+const card = ntv<CardStyleProps>({
+  variant: {
+    elevated: {
+      default: 'shadow-md',
+      isHovered: 'shadow-xl',
+    },
+  },
+});
+
+card({ variant: 'elevated' });
+// => 'shadow-md'
+
+card({ variant: 'elevated', isHovered: true });
+// => 'shadow-xl'
+```
+
+### Composing Styles
 
 Combine multiple style functions using `composeNtv`:
 
@@ -214,4 +243,18 @@ const customComposeNtv = createComposeNtv({
     },
   },
 });
+```
+
+## ESLint Configuration
+
+To lint Tailwind classes inside `ntv` calls with [eslint-plugin-better-tailwindcss](https://github.com/schoero/eslint-plugin-better-tailwindcss), add the following to your ESLint configuration:
+
+```jsonc
+{
+  "settings": {
+    "better-tailwindcss": {
+      "callees": [["ntv", [{ "match": "objectValues" }]]],
+    },
+  },
+}
 ```
