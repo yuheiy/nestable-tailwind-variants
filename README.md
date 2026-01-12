@@ -120,7 +120,7 @@ import { ntv } from 'nestable-tailwind-variants';
 
 ## Composing Styles
 
-Combine multiple style functions using `composeNtv`. This is useful for separating concerns like size and color:
+Combine multiple style functions using `composeNtv`. This is useful for reusing common styles across multiple components:
 
 ```tsx
 import { ntv, composeNtv } from 'nestable-tailwind-variants';
