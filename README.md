@@ -2,7 +2,7 @@
 
 A variant styling library for Tailwind CSS that expresses complex style combinations through nested condition definitions instead of flat `compoundVariants` patterns.
 
-Inspired by [React Spectrum's `style` macro](https://react-spectrum.adobe.com/styling), with some ideas from [tailwind-variants](https://www.tailwind-variants.org/).
+Inspired by [React Spectrum's conditional styles](https://react-spectrum.adobe.com/styling#conditional-styles), with some ideas from [tailwind-variants](https://www.tailwind-variants.org/).
 
 ## Installation
 
@@ -12,53 +12,42 @@ npm install nestable-tailwind-variants
 
 ## Basic Usage
 
-Define variants with string union types:
+The `ntv` function creates a style function from a nested style definition. Conditions can be nested to express compound states like "primary variant when hovered":
 
 ```tsx
 import { ntv } from 'nestable-tailwind-variants';
 
-const button = ntv<{ variant?: 'primary' | 'secondary' }>({
+interface ButtonStyleProps {
+  variant?: 'primary' | 'secondary';
+  isHovered?: boolean;
+}
+
+const button = ntv<ButtonStyleProps>({
   default: 'px-4 py-2 rounded font-medium',
   variant: {
-    primary: 'bg-blue-500 text-white',
-    secondary: 'bg-gray-200 text-gray-800',
+    primary: {
+      default: 'bg-blue-500 text-white',
+      isHovered: 'bg-blue-600',
+    },
+    secondary: {
+      default: 'bg-gray-200 text-gray-800',
+      isHovered: 'bg-gray-300',
+    },
   },
 });
 
 button({ variant: 'primary' });
 // => 'px-4 py-2 rounded font-medium bg-blue-500 text-white'
+
+button({ variant: 'primary', isHovered: true });
+// => 'px-4 py-2 rounded font-medium bg-blue-600 text-white'
 ```
 
-Boolean conditions starting with `is` or `allows` can be used directly:
-
-```tsx
-const button = ntv<{ isDisabled?: boolean }>({
-  default: 'bg-blue-500',
-  isDisabled: 'bg-gray-300 cursor-not-allowed',
-});
-
-button({ isDisabled: true });
-// => 'bg-gray-300 cursor-not-allowed'
-```
-
-Since `ntv` returns a function, it works directly with [React Aria Components](https://react-aria.adobe.com/)' render props:
-
-```tsx
-import { Checkbox, type CheckboxRenderProps } from 'react-aria-components';
-import { ntv } from 'nestable-tailwind-variants';
-
-<Checkbox
-  className={ntv<CheckboxRenderProps>({
-    default: 'bg-gray-100',
-    isHovered: 'bg-gray-200',
-    isSelected: 'bg-gray-900',
-  })}
-/>;
-```
+Conditions at the same level are mutually exclusive and ordered—the last matching condition takes precedence. Class conflicts are automatically resolved by [tailwind-merge](https://github.com/dcastil/tailwind-merge).
 
 ## Why Nested?
 
-With tailwind-variants, compound conditions require `compoundVariants`:
+When combining multiple conditions like `variant` + `isHovered`, tailwind-variants requires a flat `compoundVariants` array.
 
 **tailwind-variants:**
 
@@ -81,6 +70,8 @@ const button = tv({
   ],
 });
 ```
+
+With nestable-tailwind-variants, you can nest conditions directly under each variant.
 
 **nestable-tailwind-variants:**
 
@@ -108,55 +99,28 @@ const button = ntv<ButtonStyleProps>({
 });
 ```
 
-Nesting groups related styles together, reflecting the logical hierarchy of conditions in your code.
+Nesting keeps related styles grouped together, making it easier to see which hover/pressed states belong to which variant.
 
-## Guide
+## With React Aria Components
 
-### Class Conflict Resolution
-
-Class conflicts are automatically resolved by [tailwind-merge](https://github.com/dcastil/tailwind-merge):
+Since `ntv` returns a function, it works directly with [React Aria Components](https://react-aria.adobe.com/)' render props:
 
 ```tsx
-const button = ntv<{ isActive?: boolean }>({
-  default: 'bg-gray-100 p-4',
-  isActive: 'bg-blue-500',
-});
+import { Checkbox, type CheckboxRenderProps } from 'react-aria-components';
+import { ntv } from 'nestable-tailwind-variants';
 
-button({ isActive: true });
-// => 'p-4 bg-blue-500'
+<Checkbox
+  className={ntv<CheckboxRenderProps>({
+    default: 'bg-gray-100',
+    isHovered: 'bg-gray-200',
+    isSelected: 'bg-gray-900',
+  })}
+/>;
 ```
 
-When `isActive` is true, `bg-gray-100` is automatically replaced by `bg-blue-500`.
+## Composing Styles
 
-### Nested Conditions
-
-Nest conditions to define styles that apply when multiple conditions are true:
-
-```tsx
-interface CardStyleProps {
-  variant?: 'elevated';
-  isHovered?: boolean;
-}
-
-const card = ntv<CardStyleProps>({
-  variant: {
-    elevated: {
-      default: 'shadow-md',
-      isHovered: 'shadow-xl',
-    },
-  },
-});
-
-card({ variant: 'elevated' });
-// => 'shadow-md'
-
-card({ variant: 'elevated', isHovered: true });
-// => 'shadow-xl'
-```
-
-### Composing Styles
-
-Combine multiple style functions using `composeNtv`:
+Combine multiple style functions using `composeNtv`. This is useful for separating concerns like size and color:
 
 ```tsx
 import { ntv, composeNtv } from 'nestable-tailwind-variants';
@@ -182,6 +146,34 @@ button({ size: 'lg', variant: 'primary' });
 // => 'rounded font-medium px-4 py-2 text-lg bg-blue-500 text-white'
 ```
 
+## VS Code Integration
+
+With [Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss) installed, add the following to your VS Code settings (`settings.json`) to enable autocomplete in `ntv` calls:
+
+```json
+{
+  "tailwindCSS.classFunctions": ["ntv"]
+}
+```
+
+## ESLint Integration
+
+To lint Tailwind classes inside `ntv` calls with [eslint-plugin-better-tailwindcss](https://github.com/schoero/eslint-plugin-better-tailwindcss), extend the default callees in your ESLint configuration:
+
+```js
+import { getDefaultCallees } from 'eslint-plugin-better-tailwindcss/api/defaults';
+
+export default [
+  {
+    settings: {
+      'better-tailwindcss': {
+        callees: [...getDefaultCallees(), ['ntv', [{ match: 'objectValues' }]]],
+      },
+    },
+  },
+];
+```
+
 ## API
 
 ### `ntv<Props>(style)`
@@ -191,7 +183,7 @@ Creates a style function from a nested style definition.
 - `style` - Style definition object
   - `default` - Base styles (skipped when other conditions match at the same level)
   - `[variantKey]` - Style definitions for each variant value
-  - `is*` / `allows*` - Boolean condition styles
+  - `is*` / `allows*` - Styles applied when the boolean prop is `true`
 - Returns `(props: Partial<Props>) => string`
 
 ### `composeNtv(...fns)`
@@ -243,18 +235,4 @@ const customComposeNtv = createComposeNtv({
     },
   },
 });
-```
-
-## ESLint Configuration
-
-To lint Tailwind classes inside `ntv` calls with [eslint-plugin-better-tailwindcss](https://github.com/schoero/eslint-plugin-better-tailwindcss), add the following to your ESLint configuration:
-
-```jsonc
-{
-  "settings": {
-    "better-tailwindcss": {
-      "callees": [["ntv", [{ "match": "objectValues" }]]],
-    },
-  },
-}
 ```
