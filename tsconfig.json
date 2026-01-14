@@ -2,15 +2,15 @@
   // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
     // File Layout
-    // "rootDir": "./src",
+    "rootDir": "./src",
     "outDir": "./dist",
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
-    "target": "es2023",
-    "lib": ["ES2023"],
     "module": "esnext",
     "moduleResolution": "bundler",
+    "target": "es2023",
+    "lib": ["ES2023"],
     "types": [],
 
     // Other Outputs

@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
   "experimentalSortImports": {
-    "newlinesBetween": false
+    "newlinesBetween": false,
   },
-  "singleQuote": true
+  "singleQuote": true,
 }
