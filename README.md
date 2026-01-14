@@ -161,7 +161,7 @@ With [Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?item
 To lint Tailwind classes inside `ntv` calls with [eslint-plugin-better-tailwindcss](https://github.com/schoero/eslint-plugin-better-tailwindcss), extend the default callees in your ESLint configuration:
 
 ```js
-import { getDefaultCallees } from 'eslint-plugin-better-tailwindcss/api/defaults';
+import { getDefaultCallees } from 'eslint-plugin-better-tailwindcss/defaults';
 
 export default [
   {
