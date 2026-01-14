@@ -41,10 +41,10 @@
     "@commitlint/config-conventional": "^20.3.1",
     "bumpp": "^10.3.2",
     "lint-staged": "^16.2.7",
-    "oxfmt": "^0.23.0",
-    "oxlint": "^1.38.0",
+    "oxfmt": "^0.24.0",
+    "oxlint": "^1.39.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.17"
   },
   "lint-staged": {
     "*": "oxfmt --no-error-on-unmatched-pattern",
