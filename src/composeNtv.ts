@@ -30,11 +30,7 @@ type ExtractProps<T> = T extends StyleFunction<infer P> ? P : never;
  * });
  * ```
  */
-export function createComposeNtv(
-  options: NTVConfig = {},
-): <T extends StyleFunction[]>(
-  ...fns: T
-) => StyleFunction<UnionToIntersection<ExtractProps<T[number]>>> {
+export function createComposeNtv(options: NTVConfig = {}) {
   const { twMerge: useTwMerge = true, twMergeConfig } = options;
 
   const mergeClasses = useTwMerge
@@ -43,7 +39,9 @@ export function createComposeNtv(
       : twMerge
     : joinClasses;
 
-  return function composeNtv(...fns) {
+  return function composeNtv<T extends StyleFunction[]>(
+    ...fns: T
+  ): StyleFunction<UnionToIntersection<ExtractProps<T[number]>>> {
     return (props) => mergeClasses(...fns.map((fn) => fn(props)));
   };
 }

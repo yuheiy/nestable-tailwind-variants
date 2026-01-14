@@ -120,9 +120,7 @@ function evaluateDefinition<Props extends Record<string, any>>(
  * });
  * ```
  */
-export function createNTV(
-  options: NTVConfig = {},
-): <Props extends Record<string, any>>(style: StyleDefinition<Props>) => StyleFunction<Props> {
+export function createNTV(options: NTVConfig = {}) {
   const { twMerge: useTwMerge = true, twMergeConfig } = options;
 
   const mergeClasses = useTwMerge
