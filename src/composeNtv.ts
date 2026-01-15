@@ -1,6 +1,6 @@
 import { extendTailwindMerge, twMerge } from 'tailwind-merge';
-import type { NTVConfig, StyleFunction } from './types';
-import { joinClasses } from './utils';
+import type { NTVConfig, StyleFunction } from './types.js';
+import { joinClasses } from './utils.js';
 
 type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (
   k: infer I,

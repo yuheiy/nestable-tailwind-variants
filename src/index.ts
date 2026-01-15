@@ -1,3 +1,3 @@
-export { composeNtv, createComposeNtv } from './composeNtv';
-export { createNTV, ntv } from './ntv';
-export type { NTVConfig, TWMergeConfig } from './types';
+export { composeNtv, createComposeNtv } from './composeNtv.js';
+export { createNTV, ntv } from './ntv.js';
+export type { NTVConfig, TWMergeConfig } from './types.js';
