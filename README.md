@@ -152,7 +152,17 @@ With [Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?item
 
 ```json
 {
-  "tailwindCSS.classFunctions": ["ntv"]
+  "tailwindCSS.experimental.classRegex": ["ntv\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
+}
+```
+
+## Prettier Integration
+
+To sort Tailwind classes inside `ntv` calls with [prettier-plugin-tailwindcss](https://github.com/tailwindlabs/prettier-plugin-tailwindcss), add the following to your Prettier configuration:
+
+```json
+{
+  "tailwindFunctions": ["ntv"]
 }
 ```
 
