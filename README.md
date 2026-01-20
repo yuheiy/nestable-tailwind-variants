@@ -2,7 +2,7 @@
 
 Tailwind CSS variant library with nestable conditions for compound styling instead of flat compoundVariants.
 
-Inspired by [React Spectrum's style macro](https://github.com/adobe/react-spectrum/tree/main/packages/%40react-spectrum/s2) and [Tailwind Variants](https://www.tailwind-variants.org/).
+Inspired by [React Spectrum's conditional styles](https://react-spectrum.adobe.com/styling#conditional-styles) and [Tailwind Variants](https://www.tailwind-variants.org/).
 
 ## Why nestable-tailwind-variants?
 
