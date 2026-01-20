@@ -39,14 +39,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Format check
-        run: pnpm run format:check
-
       - name: Type check
         run: pnpm run typecheck
 
       - name: Lint
         run: pnpm run lint --deny-warnings
+
+      - name: Format check
+        run: pnpm run format:check
+
+      - name: Knip
+        run: pnpm run knip
 
   test:
     name: Test
