@@ -1,158 +1,60 @@
-import { extendTailwindMerge, twMerge } from 'tailwind-merge';
-import type { NTVConfig, StyleFunction } from './types.js';
-import { joinClasses } from './utils.js';
+import { twJoin, twMerge } from 'tailwind-merge';
+import type {
+  ClassProp,
+  NtvOptions,
+  NtvProps,
+  NtvScheme,
+  SchemeFor,
+  StyleFunction,
+} from './types.js';
+import { getCachedTwMerge } from './cache.js';
+import { resolveConditions } from './resolver.js';
 
-type BooleanConditionKey = `is${Capitalize<string>}` | `allows${Capitalize<string>}`;
-
-type ExtractBooleanKeys<Props> = {
-  [K in keyof Props]: K extends BooleanConditionKey ? K : never;
-}[keyof Props];
-
-type ExtractVariantKeys<Props> = Exclude<keyof Props, ExtractBooleanKeys<Props>>;
-
-type NestedStyleValue<Props> = string | StyleDefinition<Props>;
-
-type StyleDefinition<Props> = {
-  default?: string;
-} & {
-  [K in ExtractBooleanKeys<Props>]?: NestedStyleValue<Props>;
-} & {
-  [K in ExtractVariantKeys<Props>]?: {
-    [V in Extract<Props[K], string>]?: NestedStyleValue<Props>;
-  };
-};
-
-interface EvaluationContext<Props> {
-  props: Partial<Props>;
-  skipConditions: Set<string>;
-  classes: string[];
-}
-
-function isStyleDefinition(value: unknown): value is Record<string, unknown> {
+function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function evaluateDefinition<Props extends Record<string, any>>(
-  definition: StyleDefinition<Props> | string,
-  context: EvaluationContext<Props>,
-): void {
-  if (typeof definition === 'string') {
-    context.classes.push(definition);
-    return;
+function validateScheme(scheme: NtvScheme): void {
+  if ('class' in scheme) {
+    throw new Error('The "class" property is not allowed in ntv scheme. Use "$base" instead.');
   }
 
-  if (!isStyleDefinition(definition)) {
-    return;
+  if ('className' in scheme) {
+    throw new Error('The "className" property is not allowed in ntv scheme. Use "$base" instead.');
   }
 
-  const entries = Object.entries(definition);
+  validateNoNestedSpecialKeys(scheme, false);
+}
 
-  let defaultValue: unknown = undefined;
-  const conditions: Array<[string, unknown]> = [];
-
-  for (const [key, value] of entries) {
-    if (key === 'default') {
-      defaultValue = value;
-    } else {
-      conditions.push([key, value]);
-    }
-  }
-
-  const allConditionKeys = conditions.map(([key]) => key);
-  const subSkipConditions = new Set([...context.skipConditions, ...allConditionKeys]);
-
-  if (defaultValue !== undefined) {
-    evaluateDefinition(defaultValue as StyleDefinition<Props> | string, {
-      ...context,
-      skipConditions: subSkipConditions,
-    });
-  }
-
-  for (const [key, value] of conditions) {
-    if (context.skipConditions.has(key)) {
-      continue;
+function validateNoNestedSpecialKeys(obj: Record<string, unknown>, isNested: boolean): void {
+  for (const [key, value] of Object.entries(obj)) {
+    // Check if this is a top-level-only key in a nested context
+    if (isNested && key === '$base') {
+      throw new Error(
+        `The "${key}" property is only allowed at the top level of ntv scheme. It cannot be nested inside variants or conditions.`,
+      );
     }
 
-    subSkipConditions.delete(key);
-
-    const propValue = context.props[key as keyof Props];
-
-    if (/^(is|allows)[A-Z]/.test(key) && propValue) {
-      const nestedSkipConditions = new Set([...subSkipConditions, key]);
-      evaluateDefinition(value as StyleDefinition<Props> | string, {
-        props: context.props,
-        skipConditions: nestedSkipConditions,
-        classes: context.classes,
-      });
-    } else if (key !== 'default' && propValue !== undefined) {
-      if (isStyleDefinition(value)) {
-        const variantValue = value[propValue as string];
-        if (variantValue !== undefined) {
-          const nestedSkipConditions = new Set([...subSkipConditions, key]);
-          evaluateDefinition(variantValue as StyleDefinition<Props> | string, {
-            props: context.props,
-            skipConditions: nestedSkipConditions,
-            classes: context.classes,
-          });
-        }
-      }
+    // Recursively validate nested objects
+    if (isPlainObject(value)) {
+      validateNoNestedSpecialKeys(value, true);
     }
   }
 }
 
 /**
- * Creates a customized `ntv` function with the specified options.
+ * Create a nestable tailwind variants style function.
+ *
+ * @param scheme - The scheme object defining variants and conditions
+ * @param options - Optional settings for tailwind-merge behavior
+ * @returns A style function that accepts props and returns merged class names
  *
  * @example
  * ```ts
- * // Disable tailwind-merge
- * const ntvNoMerge = createNTV({ twMerge: false });
+ * type ButtonProps = { variant: 'primary' | 'secondary'; isDisabled: boolean };
  *
- * // With custom tailwind-merge config
- * const customNTV = createNTV({
- *   twMergeConfig: {
- *     extend: {
- *       theme: {
- *         shadow: ['100', '200', '300'],
- *       },
- *     },
- *   },
- * });
- * ```
- */
-export function createNTV(options: NTVConfig = {}) {
-  const { twMerge: useTwMerge = true, twMergeConfig } = options;
-
-  const mergeClasses = useTwMerge
-    ? twMergeConfig
-      ? extendTailwindMerge(twMergeConfig)
-      : twMerge
-    : joinClasses;
-
-  return function ntv<Props extends Record<string, any>>(
-    style: StyleDefinition<Props>,
-  ): StyleFunction<Props> {
-    return (props) => {
-      const context: EvaluationContext<Props> = {
-        props,
-        skipConditions: new Set(),
-        classes: [],
-      };
-
-      evaluateDefinition(style, context);
-
-      return mergeClasses(...context.classes);
-    };
-  };
-}
-
-/**
- * Creates a style function from a nested style definition.
- *
- * @example
- * ```ts
- * const button = ntv<{ variant?: 'primary' | 'secondary'; isDisabled?: boolean }>({
- *   default: 'px-4 py-2 rounded',
+ * const button = ntv<ButtonProps>({
+ *   $base: 'px-4 py-2 rounded',
  *   variant: {
  *     primary: 'bg-blue-500 text-white',
  *     secondary: 'bg-gray-200 text-gray-800',
@@ -160,11 +62,70 @@ export function createNTV(options: NTVConfig = {}) {
  *   isDisabled: 'opacity-50 cursor-not-allowed',
  * });
  *
- * button({ variant: 'primary' });
- * // => 'px-4 py-2 rounded bg-blue-500 text-white'
- *
- * button({ variant: 'primary', isDisabled: true });
- * // => 'px-4 py-2 rounded bg-blue-500 text-white opacity-50 cursor-not-allowed'
+ * button({ variant: 'primary' }); // 'px-4 py-2 rounded bg-blue-500 text-white'
+ * button({ variant: 'primary', isDisabled: true }); // 'px-4 py-2 rounded bg-blue-500 text-white opacity-50 cursor-not-allowed'
  * ```
  */
-export const ntv = createNTV();
+export function ntv<TProps extends NtvProps>(
+  scheme: SchemeFor<TProps>,
+  options?: NtvOptions,
+): StyleFunction<TProps>;
+export function ntv(scheme: NtvScheme, options?: NtvOptions): StyleFunction<any>;
+export function ntv(
+  scheme: NtvScheme,
+  { twMerge: usesTwMerge = true, twMergeConfig }: NtvOptions = {},
+): StyleFunction<any> {
+  validateScheme(scheme);
+
+  const { $base, ...conditions } = scheme;
+
+  const mergeFn = usesTwMerge
+    ? twMergeConfig
+      ? getCachedTwMerge(twMergeConfig)
+      : twMerge
+    : twJoin;
+
+  return function styleFn({
+    class: slotClass,
+    className: slotClassName,
+    ...props
+  }: Record<string, unknown> & ClassProp = {}): string {
+    return mergeFn($base, ...resolveConditions(conditions, props), slotClass, slotClassName);
+  };
+}
+
+/**
+ * Create a pre-configured ntv function with fixed options.
+ *
+ * @param defaultOptions - Default options to apply to all ntv calls
+ * @returns A pre-configured ntv function
+ *
+ * @example
+ * ```ts
+ * const myNtv = createNtv({
+ *   twMergeConfig: {
+ *     extend: {
+ *       classGroups: {
+ *         'font-size': [{ text: ['huge', 'tiny'] }],
+ *       },
+ *     },
+ *   },
+ * });
+ *
+ * const button = myNtv({
+ *   $base: 'text-huge',
+ *   variant: {
+ *     primary: 'bg-blue-500',
+ *     secondary: 'bg-gray-200',
+ *   },
+ * });
+ * ```
+ */
+export function createNtv(defaultOptions: NtvOptions): {
+  <TProps extends NtvProps>(scheme: SchemeFor<TProps>): StyleFunction<TProps>;
+  (scheme: NtvScheme): StyleFunction<any>;
+} {
+  return function configuredNtv(scheme: NtvScheme) {
+    return ntv(scheme, defaultOptions);
+  };
+}

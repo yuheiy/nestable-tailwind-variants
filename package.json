@@ -1,7 +1,7 @@
 {
   "name": "nestable-tailwind-variants",
   "version": "0.1.4",
-  "description": "A variant styling library for Tailwind CSS that expresses complex style combinations through nested condition definitions instead of flat `compoundVariants` patterns.",
+  "description": "Tailwind CSS variant library with nestable conditions for compound styling instead of flat compoundVariants.",
   "homepage": "https://github.com/yuheiy/nestable-tailwind-variants#readme",
   "bugs": {
     "url": "https://github.com/yuheiy/nestable-tailwind-variants/issues"

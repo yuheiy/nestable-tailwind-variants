@@ -1,59 +1,18 @@
 # nestable-tailwind-variants
 
-A variant styling library for Tailwind CSS that expresses complex style combinations through nested condition definitions instead of flat `compoundVariants` patterns.
+Tailwind CSS variant library with nestable conditions for compound styling instead of flat compoundVariants.
 
-Inspired by [React Spectrum's conditional styles](https://react-spectrum.adobe.com/styling#conditional-styles), with some ideas from [tailwind-variants](https://www.tailwind-variants.org/).
+Inspired by [React Spectrum's style macro](https://github.com/adobe/react-spectrum/tree/main/packages/%40react-spectrum/s2) and [Tailwind Variants](https://www.tailwind-variants.org/).
 
-## Installation
+## Why nestable-tailwind-variants?
 
-```bash
-npm install nestable-tailwind-variants
-```
-
-## Basic Usage
-
-The `ntv` function creates a style function from a nested style definition. Conditions can be nested to express compound states like "primary variant when hovered":
+With [Tailwind Variants](https://www.tailwind-variants.org/), combining variants with [React Aria Components render props](https://react-aria.adobe.com/styling#render-props) like `isHovered` and `isPressed` requires `compoundVariants`. This quickly becomes verbose as combinations grow:
 
 ```tsx
-import { ntv } from 'nestable-tailwind-variants';
+import { tv } from 'tailwind-variants';
 
-interface ButtonStyleProps {
-  variant?: 'primary' | 'secondary';
-  isHovered?: boolean;
-}
-
-const button = ntv<ButtonStyleProps>({
-  default: 'px-4 py-2 rounded font-medium',
-  variant: {
-    primary: {
-      default: 'bg-blue-500 text-white',
-      isHovered: 'bg-blue-600',
-    },
-    secondary: {
-      default: 'bg-gray-200 text-gray-800',
-      isHovered: 'bg-gray-300',
-    },
-  },
-});
-
-button({ variant: 'primary' });
-// => 'px-4 py-2 rounded font-medium bg-blue-500 text-white'
-
-button({ variant: 'primary', isHovered: true });
-// => 'px-4 py-2 rounded font-medium bg-blue-600 text-white'
-```
-
-Conditions at the same level are mutually exclusive and ordered—the last matching condition takes precedence. Class conflicts are automatically resolved by [tailwind-merge](https://github.com/dcastil/tailwind-merge).
-
-## Why Nested?
-
-When combining multiple conditions like `variant` + `isHovered`, tailwind-variants requires a flat `compoundVariants` array.
-
-**tailwind-variants:**
-
-```tsx
 const button = tv({
-  base: 'rounded font-medium',
+  base: 'px-4 py-2 rounded',
   variants: {
     variant: {
       primary: 'bg-blue-500 text-white',
@@ -66,89 +25,524 @@ const button = tv({
     { variant: 'primary', isHovered: true, class: 'bg-blue-600' },
     { variant: 'primary', isPressed: true, class: 'bg-blue-700' },
     { variant: 'secondary', isHovered: true, class: 'bg-gray-300' },
-    { variant: 'secondary', isPressed: true, class: 'bg-gray-400' },
+    // ... one entry for every variant × condition combination
   ],
 });
+
+button({ variant: 'primary', isHovered: true });
+// => 'px-4 py-2 rounded bg-blue-500 text-white bg-blue-600'
 ```
 
-With nestable-tailwind-variants, you can nest conditions directly under each variant.
-
-**nestable-tailwind-variants:**
+nestable-tailwind-variants solves this by letting you nest conditions directly inside variants, keeping related logic together:
 
 ```tsx
-interface ButtonStyleProps {
-  variant?: 'primary' | 'secondary';
-  isHovered?: boolean;
-  isPressed?: boolean;
+import { ntv } from 'nestable-tailwind-variants';
+
+interface ButtonProps {
+  variant: 'primary' | 'secondary';
+  isHovered: boolean;
+  isPressed: boolean;
 }
 
-const button = ntv<ButtonStyleProps>({
-  default: 'rounded font-medium',
+const button = ntv<ButtonProps>({
+  $base: 'px-4 py-2 rounded',
   variant: {
     primary: {
-      default: 'bg-blue-500 text-white',
+      $default: 'bg-blue-500 text-white',
       isHovered: 'bg-blue-600',
       isPressed: 'bg-blue-700',
     },
     secondary: {
-      default: 'bg-gray-200 text-gray-800',
+      $default: 'bg-gray-200 text-gray-800',
+      isHovered: 'bg-gray-300',
+    },
+  },
+});
+
+button({ variant: 'primary', isHovered: true });
+// => 'px-4 py-2 rounded bg-blue-600'
+```
+
+## Installation
+
+```bash
+npm install nestable-tailwind-variants
+```
+
+## Core Concepts
+
+### `$base` - Always-applied styles
+
+The `$base` property defines styles that are always included in the output:
+
+```ts
+interface CardProps {
+  variant: 'elevated' | 'flat';
+}
+
+const card = ntv<CardProps>({
+  $base: 'rounded-lg shadow-md p-4',
+  variant: {
+    elevated: 'shadow-xl',
+    flat: 'shadow-none',
+  },
+});
+
+card();
+// => 'rounded-lg shadow-md p-4'
+
+card({ variant: 'elevated' });
+// => 'rounded-lg shadow-xl p-4'
+// Note: shadow-md is replaced by shadow-xl via tailwind-merge
+```
+
+### Variants - String-based selection
+
+Define variants as objects mapping variant values to class names:
+
+```ts
+interface BadgeProps {
+  size: 'sm' | 'md' | 'lg';
+  color: 'info' | 'success' | 'warning';
+}
+
+const badge = ntv<BadgeProps>({
+  $base: 'px-2 py-1 rounded text-sm',
+  size: {
+    sm: 'text-xs px-1.5',
+    md: 'text-sm px-2',
+    lg: 'text-base px-3',
+  },
+  color: {
+    info: 'bg-blue-100 text-blue-800',
+    success: 'bg-green-100 text-green-800',
+    warning: 'bg-yellow-100 text-yellow-800',
+  },
+});
+
+badge({ size: 'lg', color: 'success' });
+// => 'py-1 rounded text-base px-3 bg-green-100 text-green-800'
+```
+
+### Boolean Conditions - `is[A-Z]` / `allows[A-Z]` patterns
+
+Keys matching `is[A-Z]*` or `allows[A-Z]*` are treated as boolean conditions:
+
+```ts
+interface InputProps {
+  isFocused: boolean;
+  isDisabled: boolean;
+  isInvalid: boolean;
+  allowsClearing: boolean;
+}
+
+const input = ntv<InputProps>({
+  $base: 'border rounded px-3 py-2',
+  isFocused: 'ring-2 ring-blue-500 border-blue-500',
+  isDisabled: 'bg-gray-100 text-gray-400 cursor-not-allowed',
+  isInvalid: 'border-red-500 text-red-600',
+  allowsClearing: 'pr-8',
+});
+
+input({ isFocused: true });
+// => 'border rounded px-3 py-2 ring-2 ring-blue-500 border-blue-500'
+
+input({ isDisabled: true, isInvalid: true });
+// => 'border rounded px-3 py-2 bg-gray-100 text-gray-400 cursor-not-allowed border-red-500 text-red-600'
+```
+
+### `$default` - Fallback styles
+
+Use `$default` for styles applied when no conditions match:
+
+```ts
+interface TextProps {
+  variant: 'primary' | 'danger';
+}
+
+const text = ntv<TextProps>({
+  $default: 'text-gray-500',
+  variant: {
+    primary: 'text-blue-600',
+    danger: 'text-red-600',
+  },
+});
+
+text();
+// => 'text-gray-500'
+
+text({ variant: 'primary' });
+// => 'text-blue-600'
+```
+
+When `$default` is nested inside variants, they accumulate only when no conditions match at each level:
+
+```ts
+interface Props {
+  variant: 'primary';
+  size: 'large';
+}
+
+const styles = ntv<Props>({
+  $base: 'base',
+  $default: 'root-default',
+  variant: {
+    $default: 'variant-default',
+    primary: {
+      size: {
+        $default: 'size-default',
+        large: 'size-large',
+      },
+    },
+  },
+});
+
+styles();
+// => 'base root-default variant-default'
+// No conditions matched, so $defaults accumulate
+
+styles({ variant: 'primary' });
+// => 'base size-default'
+// variant matched, so only nested $default is applied
+
+styles({ variant: 'primary', size: 'large' });
+// => 'base size-large'
+// Both matched, so no $defaults are applied
+```
+
+## Nested Conditions
+
+The core feature of nestable-tailwind-variants is the ability to nest conditions inside variants.
+
+### Boolean conditions inside variants
+
+```ts
+interface ChipProps {
+  variant: 'filled' | 'outlined';
+  isSelected: boolean;
+}
+
+const chip = ntv<ChipProps>({
+  $base: 'inline-flex items-center rounded-full px-3 py-1',
+  variant: {
+    filled: {
+      $default: 'bg-gray-200 text-gray-800',
+      isSelected: 'bg-blue-500 text-white',
+    },
+    outlined: {
+      $default: 'border border-gray-300 text-gray-800',
+      isSelected: 'border-blue-500 text-blue-500',
+    },
+  },
+});
+
+chip({ variant: 'filled' });
+// => 'inline-flex items-center rounded-full px-3 py-1 bg-gray-200 text-gray-800'
+
+chip({ variant: 'filled', isSelected: true });
+// => 'inline-flex items-center rounded-full px-3 py-1 bg-blue-500 text-white'
+
+chip({ variant: 'outlined', isSelected: true });
+// => 'inline-flex items-center rounded-full px-3 py-1 border-blue-500 text-blue-500'
+```
+
+### Multi-level nesting
+
+You can nest conditions to any depth:
+
+```ts
+interface ButtonProps {
+  variant: 'primary';
+  isHovered: boolean;
+  isPressed: boolean;
+  isDisabled: boolean;
+}
+
+const button = ntv<ButtonProps>({
+  $base: 'px-4 py-2 rounded font-medium transition-colors',
+  variant: {
+    primary: {
+      $default: 'bg-blue-500 text-white',
+      isHovered: 'bg-blue-600',
+      isPressed: 'bg-blue-700',
+      isDisabled: {
+        $default: 'bg-blue-300 cursor-not-allowed',
+        isHovered: 'bg-blue-300', // Prevent hover effect when disabled
+      },
+    },
+  },
+});
+
+button({ variant: 'primary' });
+// => 'px-4 py-2 rounded font-medium transition-colors bg-blue-500 text-white'
+
+button({ variant: 'primary', isHovered: true });
+// => 'px-4 py-2 rounded font-medium transition-colors bg-blue-600'
+
+button({ variant: 'primary', isDisabled: true });
+// => 'px-4 py-2 rounded font-medium transition-colors bg-blue-300 cursor-not-allowed'
+
+button({ variant: 'primary', isDisabled: true, isHovered: true });
+// => 'px-4 py-2 rounded font-medium transition-colors bg-blue-300'
+```
+
+## Composing Styles
+
+Merge multiple style functions into one. Later functions take precedence:
+
+```ts
+import { ntv, mergeNtv } from 'nestable-tailwind-variants';
+
+interface BaseButtonProps {
+  size: 'sm' | 'md';
+}
+
+const baseButton = ntv<BaseButtonProps>({
+  $base: 'rounded font-medium transition-colors',
+  size: {
+    sm: 'px-3 py-1.5 text-sm',
+    md: 'px-4 py-2 text-base',
+  },
+});
+
+interface ColoredButtonProps {
+  variant: 'primary' | 'secondary';
+}
+
+const coloredButton = ntv<ColoredButtonProps>({
+  variant: {
+    primary: 'bg-blue-500 text-white hover:bg-blue-600',
+    secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300',
+  },
+});
+
+const button = mergeNtv(baseButton, coloredButton);
+
+button({ size: 'md', variant: 'primary' });
+// => 'rounded font-medium transition-colors px-4 py-2 text-base bg-blue-500 text-white hover:bg-blue-600'
+```
+
+## Passing Additional Classes
+
+Pass additional classes using `class` or `className`:
+
+```ts
+interface BoxProps {
+  variant: 'primary' | 'secondary';
+}
+
+const box = ntv<BoxProps>({
+  $base: 'p-4 rounded',
+  variant: {
+    primary: 'bg-blue-500',
+    secondary: 'bg-gray-200',
+  },
+});
+
+box({ variant: 'primary', class: 'mt-4 p-8' });
+// => 'rounded bg-blue-500 mt-4 p-8'
+// Note: p-8 overrides p-4 via tailwind-merge
+
+box({ variant: 'secondary', className: 'shadow-lg' });
+// => 'p-4 rounded bg-gray-200 shadow-lg'
+```
+
+## React Aria Components Integration
+
+nestable-tailwind-variants is designed to work seamlessly with [React Aria Components render props](https://react-aria.adobe.com/styling#render-props):
+
+```tsx
+import {
+  Button as RACButton,
+  composeRenderProps,
+  type ButtonProps as RACButtonProps,
+  type ButtonRenderProps,
+} from 'react-aria-components';
+import { ntv } from 'nestable-tailwind-variants';
+
+interface ButtonStyleProps {
+  variant?: 'primary' | 'secondary';
+  size?: 'sm' | 'md' | 'lg';
+}
+
+const button = ntv<ButtonRenderProps & ButtonStyleProps>({
+  $base:
+    'inline-flex items-center justify-center rounded-md px-4 py-2 font-medium transition-colors focus:outline-none',
+  variant: {
+    primary: {
+      $default: 'bg-blue-500 text-white',
+      isHovered: 'bg-blue-600',
+      isPressed: 'bg-blue-700',
+      isFocusVisible: 'ring-2 ring-blue-500 ring-offset-2',
+    },
+    secondary: {
+      $default: 'bg-gray-200 text-gray-800',
       isHovered: 'bg-gray-300',
       isPressed: 'bg-gray-400',
+      isFocusVisible: 'ring-2 ring-gray-500 ring-offset-2',
+    },
+  },
+  size: {
+    sm: 'h-8 px-3 text-sm',
+    md: 'h-10 px-4 text-base',
+    lg: 'h-12 px-6 text-lg',
+  },
+  isDisabled: 'opacity-50 cursor-not-allowed',
+});
+
+function Button({
+  variant = 'primary',
+  size = 'md',
+  children,
+  ...props
+}: RACButtonProps & ButtonStyleProps) {
+  return (
+    <RACButton
+      {...props}
+      className={composeRenderProps(props.className, (className, renderProps) =>
+        // renderProps includes isHovered, isPressed, isFocusVisible, isDisabled
+        button({ ...renderProps, variant, size, className }),
+      )}
+    >
+      {children}
+    </RACButton>
+  );
+}
+```
+
+## Type Safety
+
+The recommended approach is to define a props type and pass it as a type argument to `ntv`. This provides clear documentation, better IDE support, and ensures type safety:
+
+```ts
+interface ButtonProps {
+  variant: 'primary' | 'secondary';
+  size: 'sm' | 'md' | 'lg';
+  isDisabled: boolean;
+}
+
+const button = ntv<ButtonProps>({
+  $base: 'rounded',
+  variant: {
+    primary: 'bg-blue-500',
+    secondary: 'bg-gray-200',
+  },
+  size: {
+    sm: 'text-sm',
+    md: 'text-base',
+    lg: 'text-lg',
+  },
+  isDisabled: 'opacity-50',
+});
+
+button({ variant: 'primary', size: 'lg' }); // ✅ OK
+button({ variant: 'tertiary' }); // ❌ Error: 'tertiary' is not assignable
+```
+
+Omitting the type argument when the scheme has keys disables type checking. Provide explicit type arguments when possible for better type safety.
+
+## Options
+
+`ntv` accepts an options object as the second argument. For `mergeNtv`, use `mergeNtvWithOptions` to pass options.
+
+### Disabling tailwind-merge
+
+By default, [tailwind-merge](https://github.com/dcastil/tailwind-merge) is used to resolve class conflicts. To disable it, pass `{ twMerge: false }`.
+
+For `ntv`:
+
+```ts
+const styles = ntv(
+  {
+    $base: 'p-4',
+  },
+  { twMerge: false },
+);
+
+styles({ class: 'p-8' });
+// => 'p-4 p-8' (no merge, both classes kept)
+```
+
+For `mergeNtvWithOptions`:
+
+```ts
+const styles = mergeNtvWithOptions(baseStyles, overrideStyles)({ twMerge: false });
+```
+
+### Custom tailwind-merge configuration
+
+If you've extended Tailwind with custom classes (e.g., custom font sizes via `@theme`), you need to tell tailwind-merge about them so it can resolve conflicts correctly:
+
+```css
+/* app.css */
+@theme {
+  --font-size-huge: 4rem;
+}
+```
+
+For `ntv`:
+
+```ts
+const heading = ntv(
+  { $base: 'text-huge' },
+  {
+    twMergeConfig: {
+      extend: {
+        classGroups: {
+          'font-size': [{ text: ['huge'] }],
+        },
+      },
+    },
+  },
+);
+
+heading({ class: 'text-6xl' });
+// => 'text-6xl' (text-huge is correctly replaced by text-6xl)
+```
+
+For `mergeNtvWithOptions`:
+
+```ts
+const styles = mergeNtvWithOptions(
+  baseStyles,
+  overrideStyles,
+)({
+  twMergeConfig: {
+    extend: {
+      classGroups: {
+        'font-size': [{ text: ['huge'] }],
+      },
     },
   },
 });
 ```
 
-Nesting keeps related styles grouped together, making it easier to see which hover/pressed states belong to which variant.
+Without this configuration, tailwind-merge wouldn't recognize `text-huge` as a font-size class and would keep both `text-huge` and `text-6xl`.
 
-## With React Aria Components
+### Pre-configured factories
 
-Since `ntv` returns a function, it works directly with [React Aria Components](https://react-aria.adobe.com/)' render props:
+Use `createNtv` or `createMergeNtv` to create functions with shared options:
 
-```tsx
-import { Checkbox, type CheckboxRenderProps } from 'react-aria-components';
-import { ntv } from 'nestable-tailwind-variants';
+```ts
+import { createNtv, createMergeNtv, type TwMergeConfig } from 'nestable-tailwind-variants';
 
-<Checkbox
-  className={ntv<CheckboxRenderProps>({
-    default: 'bg-gray-100',
-    isHovered: 'bg-gray-200',
-    isSelected: 'bg-gray-900',
-  })}
-/>;
+const twMergeConfig: TwMergeConfig = {
+  extend: {
+    classGroups: {
+      'font-size': [{ text: ['huge', 'tiny'] }],
+    },
+  },
+};
+
+const ntv = createNtv({ twMergeConfig });
+const mergeNtv = createMergeNtv({ twMergeConfig });
 ```
 
-## Composing Styles
+## Tooling
 
-Combine multiple style functions using `composeNtv`. This is useful for reusing common styles across multiple components:
+### Tailwind CSS IntelliSense
 
-```tsx
-import { ntv, composeNtv } from 'nestable-tailwind-variants';
-
-const baseButton = ntv<{ size?: 'sm' | 'lg' }>({
-  default: 'rounded font-medium',
-  size: {
-    sm: 'px-2 py-1 text-sm',
-    lg: 'px-4 py-2 text-lg',
-  },
-});
-
-const coloredButton = ntv<{ variant?: 'primary' | 'secondary' }>({
-  variant: {
-    primary: 'bg-blue-500 text-white',
-    secondary: 'bg-gray-200 text-gray-800',
-  },
-});
-
-const button = composeNtv(baseButton, coloredButton);
-
-button({ size: 'lg', variant: 'primary' });
-// => 'rounded font-medium px-4 py-2 text-lg bg-blue-500 text-white'
-```
-
-## VS Code Integration
-
-With [Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss) installed, add the following to your VS Code settings (`settings.json`) to enable autocomplete in `ntv` calls:
+Add to `.vscode/settings.json` for [Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss) class autocomplete:
 
 ```json
 {
@@ -156,9 +550,9 @@ With [Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?item
 }
 ```
 
-## Prettier Integration
+### prettier-plugin-tailwindcss
 
-To sort Tailwind classes inside `ntv` calls with [prettier-plugin-tailwindcss](https://github.com/tailwindlabs/prettier-plugin-tailwindcss), add the following to your Prettier configuration:
+Add to your Prettier config for [prettier-plugin-tailwindcss](https://github.com/tailwindlabs/prettier-plugin-tailwindcss) automatic class sorting:
 
 ```json
 {
@@ -166,9 +560,9 @@ To sort Tailwind classes inside `ntv` calls with [prettier-plugin-tailwindcss](h
 }
 ```
 
-## ESLint Integration
+### eslint-plugin-better-tailwindcss
 
-To lint Tailwind classes inside `ntv` calls with [eslint-plugin-better-tailwindcss](https://github.com/schoero/eslint-plugin-better-tailwindcss), extend the default callees in your ESLint configuration:
+Add to your ESLint config for [eslint-plugin-better-tailwindcss](https://github.com/schoero/eslint-plugin-better-tailwindcss) linting:
 
 ```js
 import { getDefaultCallees } from 'eslint-plugin-better-tailwindcss/defaults';
@@ -184,65 +578,37 @@ export default [
 ];
 ```
 
-## API
+## API Reference
 
-### `ntv<Props>(style)`
+### Functions
 
-Creates a style function from a nested style definition.
+| Function                                     | Description                                             |
+| -------------------------------------------- | ------------------------------------------------------- |
+| `ntv(scheme, options?)`                      | Create a style function from a scheme                   |
+| `createNtv(options)`                         | Create a pre-configured `ntv` with default options      |
+| `mergeNtv(...styleFns)`                      | Merge multiple style functions into one                 |
+| `mergeNtvWithOptions(...styleFns)(options?)` | Merge style functions with custom options               |
+| `createMergeNtv(options)`                    | Create a pre-configured `mergeNtv` with default options |
 
-- `style` - Style definition object
-  - `default` - Base styles (skipped when other conditions match at the same level)
-  - `[variantKey]` - Style definitions for each variant value
-  - `is*` / `allows*` - Styles applied when the boolean prop is `true`
-- Returns `(props: Partial<Props>) => string`
+### Types
 
-### `composeNtv(...fns)`
+| Type            | Description                                                                                 |
+| --------------- | ------------------------------------------------------------------------------------------- |
+| `ClassValue`    | Valid class value (string, array, or object)                                                |
+| `ClassProp`     | Props for runtime class override (`{ class?: ClassValue }` or `{ className?: ClassValue }`) |
+| `NtvOptions`    | Options for ntv functions (`{ twMerge?: boolean; twMergeConfig?: TwMergeConfig }`)          |
+| `TwMergeConfig` | Configuration object for tailwind-merge                                                     |
 
-Composes multiple style functions into a single function.
+### Scheme Properties
 
-- `fns` - Style functions to compose
-- Returns `(props: Partial<Props>) => string`
+| Property       | Description                                          |
+| -------------- | ---------------------------------------------------- |
+| `$base`        | Classes always applied (top-level only)              |
+| `$default`     | Fallback classes when no conditions match            |
+| `is[A-Z]*`     | Boolean condition (e.g., `isSelected`, `isDisabled`) |
+| `allows[A-Z]*` | Boolean condition (e.g., `allowsRemoving`)           |
+| `[key]`        | Variant object mapping values to classes             |
 
-### `createNTV(options)`
+## License
 
-Creates a customized `ntv` function.
-
-- `options.twMerge` (`boolean`, default: `true`) - Enable tailwind-merge
-- `options.twMergeConfig` (`object`) - Custom tailwind-merge configuration
-- Returns customized `ntv` function
-
-```tsx
-const ntvNoMerge = createNTV({ twMerge: false });
-
-const customNTV = createNTV({
-  twMergeConfig: {
-    extend: {
-      theme: {
-        shadow: ['100', '200', '300'],
-      },
-    },
-  },
-});
-```
-
-### `createComposeNtv(options)`
-
-Creates a customized `composeNtv` function.
-
-- `options.twMerge` (`boolean`, default: `true`) - Enable tailwind-merge
-- `options.twMergeConfig` (`object`) - Custom tailwind-merge configuration
-- Returns customized `composeNtv` function
-
-```tsx
-const composeNtvNoMerge = createComposeNtv({ twMerge: false });
-
-const customComposeNtv = createComposeNtv({
-  twMergeConfig: {
-    extend: {
-      theme: {
-        shadow: ['100', '200', '300'],
-      },
-    },
-  },
-});
-```
+MIT
