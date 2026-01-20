@@ -1,7 +1,6 @@
 import { extendTailwindMerge } from 'tailwind-merge';
-import type { NtvOptions } from './types.js';
+import type { TwMergeConfig } from './types.js';
 
-type TwMergeConfig = NonNullable<NtvOptions['twMergeConfig']>;
 type TwMergeFn = ReturnType<typeof extendTailwindMerge>;
 
 const cache = new Map<TwMergeConfig, TwMergeFn>();
