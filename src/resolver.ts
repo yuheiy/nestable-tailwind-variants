@@ -1,5 +1,8 @@
 import type { ClassValue } from './types.js';
-import { isPlainObject } from './utils.js';
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
 
 /**
  * Resolves conditions from scheme based on provided props to generate class values.
