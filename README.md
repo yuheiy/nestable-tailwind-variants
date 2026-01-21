@@ -40,8 +40,8 @@ import { ntv } from 'nestable-tailwind-variants';
 
 interface ButtonProps {
   variant: 'primary' | 'secondary';
-  isHovered: boolean;
-  isPressed: boolean;
+  isHovered?: boolean;
+  isPressed?: boolean;
 }
 
 const button = ntv<ButtonProps>({
