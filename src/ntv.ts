@@ -1,20 +1,12 @@
 import { twJoin, twMerge } from 'tailwind-merge';
-import type {
-  ClassProp,
-  NtvOptions,
-  NtvProps,
-  NtvScheme,
-  SchemeFor,
-  StyleFunction,
-} from './types.js';
+import type { ClassProp, NtvOptions, Scheme, StyleFunction } from './types.js';
 import { getCachedTwMerge } from './cache.js';
 import { resolveConditions } from './resolver.js';
 
-function validateScheme(scheme: NtvScheme): void {
+function validateScheme(scheme: Scheme): void {
   if ('class' in scheme) {
     throw new Error('The "class" property is not allowed in ntv scheme. Use "$base" instead.');
   }
-
   if ('className' in scheme) {
     throw new Error('The "className" property is not allowed in ntv scheme. Use "$base" instead.');
   }
@@ -44,13 +36,17 @@ function validateScheme(scheme: NtvScheme): void {
  * button({ variant: 'primary', isDisabled: true }); // 'px-4 py-2 rounded bg-blue-500 text-white opacity-50 cursor-not-allowed'
  * ```
  */
-export function ntv<TProps extends NtvProps>(
-  scheme: SchemeFor<TProps>,
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export function ntv<TProps extends {}>(
+  scheme: Scheme<TProps>,
   options?: NtvOptions,
 ): StyleFunction<TProps>;
-export function ntv(scheme: NtvScheme, options?: NtvOptions): StyleFunction<any>;
 export function ntv(
-  scheme: NtvScheme,
+  scheme: Scheme & Record<string, unknown>,
+  options?: NtvOptions,
+): StyleFunction<any>;
+export function ntv(
+  scheme: Scheme,
   { twMerge: usesTwMerge = true, twMergeConfig }: NtvOptions = {},
 ): StyleFunction<any> {
   validateScheme(scheme);
@@ -66,7 +62,8 @@ export function ntv(
     className: slotClassName,
     ...props
   }: Record<string, unknown> & ClassProp = {}): string {
-    return mergeFn(...resolveConditions(scheme, props), slotClass, slotClassName);
+    const resolvedClasses = resolveConditions(scheme, props);
+    return mergeFn(...resolvedClasses, slotClass, slotClassName);
   };
 }
 
@@ -98,10 +95,11 @@ export function ntv(
  * ```
  */
 export function createNtv(defaultOptions: NtvOptions): {
-  <TProps extends NtvProps>(scheme: SchemeFor<TProps>): StyleFunction<TProps>;
-  (scheme: NtvScheme): StyleFunction<any>;
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  <TProps extends {}>(scheme: Scheme<TProps>): StyleFunction<TProps>;
+  (scheme: Scheme & Record<string, unknown>): StyleFunction<any>;
 } {
-  return function configuredNtv(scheme: NtvScheme) {
+  return function configuredNtv(scheme: Scheme & Record<string, unknown>) {
     return ntv(scheme, defaultOptions);
   };
 }

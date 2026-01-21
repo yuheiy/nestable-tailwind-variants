@@ -2,25 +2,60 @@ import type { ClassNameValue as ClassValue, extendTailwindMerge } from 'tailwind
 
 export type { ClassValue };
 
-/**
- * Union type for class prop - ensures only one of class or className is used.
- * This prevents ambiguity when passing class names to components.
- */
+// Prop values can be either boolean or string
+export type PropValue = boolean | string;
+
+// Component properties constraint
+export type Props = Record<string, PropValue>;
+
+// Ensures class and className are mutually exclusive
 export type ClassProp =
   | { class?: ClassValue; className?: never }
   | { class?: never; className?: ClassValue };
 
-/**
- * Props type constraint for NTV style functions.
- * Props are either boolean flags or string variant selections.
- */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface NtvProps {}
+// Base structure for schemes with optional $base and $default properties
+type SchemeBase<TAllowNestedDefault extends boolean = false> = {
+  $base?: ClassValue;
+  $default?: TAllowNestedDefault extends true ? ClassValue | NestedScheme : ClassValue;
+};
 
-/**
- * Merge all properties from a union type into a single object type.
- * Combines props from multiple style functions by creating unions of their values.
- */
+// Nested scheme allows recursive nesting with conditions
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+type NestedScheme<TProps extends Props = {}> = SchemeBase<true> & NestedConditions<TProps>;
+
+// Maps props to their corresponding condition types for nested contexts
+type NestedConditions<TProps extends Props> = {
+  [K in keyof TProps & string]?: NonNullable<TProps[K]> extends boolean
+    ? ClassValue | NestedScheme<TProps>
+    : NonNullable<TProps[K]> extends string
+      ? VariantCondition<NonNullable<TProps[K]>, TProps>
+      : never;
+};
+
+// Variant condition maps variant values to schemes with optional $default
+type VariantCondition<TVariant extends string, TProps extends Props> = {
+  [V in TVariant]?: ClassValue | NestedScheme<TProps>;
+} & {
+  $default?: ClassValue | NestedScheme<TProps>;
+};
+
+// Main scheme type - top-level schemes don't allow nested $default
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export type Scheme<TProps extends Props = {}> = SchemeBase<false> & NestedConditions<TProps>;
+
+// Utility types for type manipulation
+type PartialWithUndefined<T> = {
+  [K in keyof T]?: T[K] | undefined;
+};
+
+type Simplify<T> = { [K in keyof T]: T[K] };
+
+// Style function that accepts props and returns class names
+export type StyleFunction<TProps = Props> = (
+  props?: Simplify<PartialWithUndefined<TProps> & ClassProp>,
+) => string;
+
+// Merges union types into a single type
 type MergeUnion<T> = {
   [K in T extends unknown ? keyof T : never]: T extends unknown
     ? K extends keyof T
@@ -29,89 +64,17 @@ type MergeUnion<T> = {
     : never;
 };
 
-/**
- * Extract and merge props types from an array of style functions.
- * Used by mergeNtv to create a combined props type.
- */
+// Extracts and merges props from an array of StyleFunctions
 export type MergeStyleFunctionProps<T extends readonly StyleFunction<any>[]> = MergeUnion<
   {
     [K in keyof T]: T[K] extends StyleFunction<infer P> ? P : never;
   }[number]
 >;
 
-/**
- * Make all properties optional and allow undefined values.
- * Ensures proper handling of missing props in style functions.
- */
-type PartialWithUndefined<T> = {
-  [K in keyof T]?: T[K] | undefined;
-};
-
-/**
- * Flatten intersection types for better IDE display.
- */
-type Simplify<T> = { [K in keyof T]: T[K] };
-
-/**
- * Function signature for style generators.
- * Accepts optional props and returns a string of class names.
- */
-export type StyleFunction<TProps> = (
-  props?: Simplify<PartialWithUndefined<TProps> & ClassProp>,
-) => string;
-
-/**
- * Boolean scheme entry - class value or nested scheme with conditions.
- */
-type BooleanSchemeEntry<TProps extends NtvProps> =
-  | ClassValue
-  | (SchemeFor<TProps> & { $base?: ClassValue; $default?: ClassValue });
-
-/**
- * Variant scheme entry - maps variant values to class values or nested schemes.
- */
-type VariantSchemeEntry<TVariant extends string, TProps extends NtvProps> = {
-  [V in TVariant]?:
-    | ClassValue
-    | (SchemeFor<TProps> & { $base?: ClassValue; $default?: ClassValue });
-} & { $default?: ClassValue | (SchemeFor<TProps> & { $base?: ClassValue; $default?: ClassValue }) };
-
-/**
- * Scheme conditions based on the props type.
- * Maps each prop to its appropriate scheme entry type.
- */
-type SchemeConditions<TProps extends NtvProps> = {
-  [K in keyof TProps & string]?: NonNullable<TProps[K]> extends boolean
-    ? BooleanSchemeEntry<TProps>
-    : NonNullable<TProps[K]> extends string
-      ? VariantSchemeEntry<NonNullable<TProps[K]>, TProps>
-      : never;
-};
-
-/**
- * Main scheme type for NTV style definitions.
- * Validated against TProps to ensure type safety.
- */
-export type SchemeFor<TProps extends NtvProps> = {
-  $base?: ClassValue;
-  $default?: ClassValue;
-} & SchemeConditions<TProps>;
-
-/**
- * Runtime scheme interface for NTV style definitions.
- * Untyped version used for JavaScript or when types aren't available.
- */
-export interface NtvScheme {
-  $base?: ClassValue;
-  $default?: ClassValue;
-  [key: string]: unknown;
-}
-
+// Configuration for tailwind-merge
 export type TwMergeConfig = Parameters<typeof extendTailwindMerge>[0];
 
-/**
- * Configuration options for NTV function behavior.
- */
+// Options for ntv functions
 export interface NtvOptions {
   /**
    * Whether to merge the class names with `tailwind-merge` library.

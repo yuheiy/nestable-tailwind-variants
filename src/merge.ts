@@ -86,8 +86,14 @@ export function mergeNtv<T extends readonly StyleFunction<any>[]>(
  * const styles = myMergeNtv(baseStyles, overrideStyles);
  * ```
  */
-export function createMergeNtv(defaultOptions: NtvOptions) {
-  return function configuredMergeNtv<T extends readonly StyleFunction<any>[]>(...styleFns: T) {
+export function createMergeNtv(
+  defaultOptions: NtvOptions,
+): <T extends readonly StyleFunction<any>[]>(
+  ...styleFns: T
+) => StyleFunction<MergeStyleFunctionProps<T>> {
+  return function configuredMergeNtv<T extends readonly StyleFunction<any>[]>(
+    ...styleFns: T
+  ): StyleFunction<MergeStyleFunctionProps<T>> {
     return mergeNtvWithOptions(...styleFns)(defaultOptions);
   };
 }

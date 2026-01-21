@@ -34,6 +34,29 @@ describe('ntv types', () => {
     // @ts-expect-error - class and className are mutually exclusive
     styles({ class: 'a', className: 'b' });
   });
+
+  it('restricts top-level $default to ClassValue only', () => {
+    // Top-level $default accepts ClassValue
+    ntv<{ variant: 'primary' }>({
+      $default: 'default-class',
+      variant: { primary: 'primary' },
+    });
+
+    // Top-level $default does not accept nested scheme
+    ntv<{ variant: 'primary' }>({
+      // @ts-expect-error - nested scheme not allowed at top-level $default
+      $default: { $base: 'nested' },
+      variant: { primary: 'primary' },
+    });
+
+    // Nested $default accepts scheme
+    ntv<{ variant: 'primary'; size: 'sm' }>({
+      variant: {
+        $default: { size: { sm: 'size-sm' } },
+        primary: 'primary',
+      },
+    });
+  });
 });
 
 describe('createNtv types', () => {

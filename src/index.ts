@@ -5,9 +5,9 @@ export type {
   ClassValue,
   MergeStyleFunctionProps,
   NtvOptions,
-  NtvProps,
-  NtvScheme,
-  SchemeFor,
+  Props,
+  PropValue,
+  Scheme,
   StyleFunction,
   TwMergeConfig,
 } from './types.js';
