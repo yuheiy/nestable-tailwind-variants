@@ -9,10 +9,7 @@ import type {
 } from './types.js';
 import { getCachedTwMerge } from './cache.js';
 import { resolveConditions } from './resolver.js';
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+import { isPlainObject } from './utils.js';
 
 function validateScheme(scheme: NtvScheme): void {
   if ('class' in scheme) {

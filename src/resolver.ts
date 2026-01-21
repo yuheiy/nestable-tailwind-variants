@@ -1,8 +1,5 @@
 import type { ClassValue } from './types.js';
-
-function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+import { isPlainObject } from './utils.js';
 
 /**
  * Resolves conditions from scheme based on provided props to generate class values.
@@ -20,7 +17,7 @@ export function resolveConditions(
   let hasMatchedCondition = false;
 
   function addClasses(value: unknown): void {
-    if (isObject(value)) {
+    if (isPlainObject(value)) {
       classes.push(...resolveConditions(value, props));
     } else {
       classes.push(value as ClassValue);
@@ -46,7 +43,7 @@ export function resolveConditions(
     }
 
     // Variant conditions (nested objects)
-    if (isObject(value)) {
+    if (isPlainObject(value)) {
       if (typeof propValue === 'string' && propValue in value) {
         hasMatchedCondition = true;
         addClasses(value[propValue]);
