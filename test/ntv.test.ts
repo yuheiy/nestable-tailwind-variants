@@ -200,4 +200,10 @@ describe('createNtv', () => {
     const styles = myNtv({ $base: 'p-4' });
     expect(styles({ class: 'p-8' })).toBe('p-4 p-8');
   });
+
+  it('works without arguments', () => {
+    const myNtv = createNtv();
+    const styles = myNtv({ $base: 'p-4' });
+    expect(styles({ class: 'p-8' })).toBe('p-8');
+  });
 });

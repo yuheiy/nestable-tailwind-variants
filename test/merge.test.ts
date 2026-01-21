@@ -52,4 +52,10 @@ describe('createMergeNtv', () => {
     const styles = myMergeNtv(ntv({ $base: 'p-4' }), ntv({ $base: 'p-8' }));
     expect(styles()).toBe('p-4 p-8');
   });
+
+  it('works without arguments', () => {
+    const myMergeNtv = createMergeNtv();
+    const styles = myMergeNtv(ntv({ $base: 'p-4' }), ntv({ $base: 'p-8' }));
+    expect(styles()).toBe('p-8');
+  });
 });

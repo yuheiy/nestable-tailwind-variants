@@ -93,7 +93,7 @@ export function mergeNtv<T extends readonly AnyStyleFunction[]>(
  * ```
  */
 export function createMergeNtv(
-  defaultOptions: NtvOptions,
+  defaultOptions?: NtvOptions,
 ): <T extends readonly AnyStyleFunction[]>(
   ...styleFns: T
 ) => StyleFunction<MergeStyleFunctionProps<T>> {

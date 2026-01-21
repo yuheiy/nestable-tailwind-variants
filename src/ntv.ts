@@ -94,7 +94,7 @@ export function ntv(
  * });
  * ```
  */
-export function createNtv(defaultOptions: NtvOptions): {
+export function createNtv(defaultOptions?: NtvOptions): {
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   <TProps extends {}>(scheme: Scheme<TProps>): StyleFunction<TProps>;
   (scheme: Scheme & Record<string, unknown>): StyleFunction<any>;
