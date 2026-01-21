@@ -3,15 +3,6 @@ import type { ClassProp, NtvOptions, Scheme, StyleFunction } from './types.js';
 import { getCachedTwMerge } from './cache.js';
 import { resolveConditions } from './resolver.js';
 
-function validateScheme(scheme: Scheme): void {
-  if ('class' in scheme) {
-    throw new Error('The "class" property is not allowed in ntv scheme. Use "$base" instead.');
-  }
-  if ('className' in scheme) {
-    throw new Error('The "className" property is not allowed in ntv scheme. Use "$base" instead.');
-  }
-}
-
 /**
  * Create a nestable tailwind variants style function.
  *
@@ -49,7 +40,12 @@ export function ntv(
   scheme: Scheme,
   { twMerge: usesTwMerge = true, twMergeConfig }: NtvOptions = {},
 ): StyleFunction<any> {
-  validateScheme(scheme);
+  if ('class' in scheme) {
+    throw new Error('The "class" property is not allowed in ntv scheme. Use "$base" instead.');
+  }
+  if ('className' in scheme) {
+    throw new Error('The "className" property is not allowed in ntv scheme. Use "$base" instead.');
+  }
 
   const mergeFn = usesTwMerge
     ? twMergeConfig
