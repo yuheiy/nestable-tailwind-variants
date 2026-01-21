@@ -79,10 +79,10 @@ type VariantSchemeEntry<TVariant extends string, TProps extends NtvProps> = {
  * Maps each prop to its appropriate scheme entry type.
  */
 type SchemeConditions<TProps extends NtvProps> = {
-  [K in keyof TProps & string]?: TProps[K] extends boolean
+  [K in keyof TProps & string]?: NonNullable<TProps[K]> extends boolean
     ? BooleanSchemeEntry<TProps>
-    : TProps[K] extends string
-      ? VariantSchemeEntry<TProps[K], TProps>
+    : NonNullable<TProps[K]> extends string
+      ? VariantSchemeEntry<NonNullable<TProps[K]>, TProps>
       : never;
 };
 
