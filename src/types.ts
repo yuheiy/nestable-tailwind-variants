@@ -2,79 +2,124 @@ import type { ClassNameValue as ClassValue, extendTailwindMerge } from 'tailwind
 
 export type { ClassValue };
 
-// Prop values can be either boolean or string
+// ============================================================================
+// Primitive Types
+// ============================================================================
+
 export type PropValue = boolean | string;
+export type Props = Record<string, PropValue | undefined>;
 
-// Component properties constraint
-export type Props = Record<string, PropValue>;
-
-// Ensures class and className are mutually exclusive
 export type ClassProp =
   | { class?: ClassValue; className?: never }
   | { class?: never; className?: ClassValue };
 
-// Base structure for schemes with optional $base and $default properties
-type SchemeBase<TAllowNestedDefault extends boolean = false> = {
-  $base?: ClassValue;
-  $default?: TAllowNestedDefault extends true ? ClassValue | NestedScheme : ClassValue;
-};
+// ============================================================================
+// Internal Utilities
+// ============================================================================
 
-// Nested scheme allows recursive nesting with conditions
+type Flatten<T> = { [K in keyof T]: T[K] };
+
+type RequiredKeys<T> = {
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  [K in keyof T]-?: {} extends Pick<T, K> ? never : K;
+}[keyof T];
+
+type OptionalKeys<T> = Exclude<keyof T, RequiredKeys<T>>;
+
+// ============================================================================
+// Scheme Types
+// ============================================================================
+
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-type NestedScheme<TProps extends Props = {}> = SchemeBase<true> & NestedConditions<TProps>;
+type NestedScheme<TProps extends Props = {}> = {
+  $base?: ClassValue;
+  $default?: ClassValue | NestedScheme<TProps>;
+} & PropConditions<TProps>;
 
-// Maps props to their corresponding condition types for nested contexts
-type NestedConditions<TProps extends Props> = {
+type VariantMapping<
+  TVariant extends string,
+  TProps extends Props,
+  TAllowDefault extends boolean,
+> = {
+  [V in TVariant]?: ClassValue | NestedScheme<TProps>;
+} & (TAllowDefault extends true
+  ? { $default?: ClassValue | NestedScheme<TProps> }
+  : // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+    {});
+
+type PropConditions<TProps extends Props> = {
   [K in keyof TProps & string]?: NonNullable<TProps[K]> extends boolean
     ? ClassValue | NestedScheme<TProps>
     : NonNullable<TProps[K]> extends string
-      ? VariantCondition<NonNullable<TProps[K]>, TProps>
+      ? VariantMapping<NonNullable<TProps[K]>, TProps, undefined extends TProps[K] ? true : false>
       : never;
 };
 
-// Variant condition maps variant values to schemes with optional $default
-type VariantCondition<TVariant extends string, TProps extends Props> = {
-  [V in TVariant]?: ClassValue | NestedScheme<TProps>;
-} & {
-  $default?: ClassValue | NestedScheme<TProps>;
-};
-
-// Main scheme type - top-level schemes don't allow nested $default
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export type Scheme<TProps extends Props = {}> = SchemeBase<false> & NestedConditions<TProps>;
+export type Scheme<TProps extends Props = {}> = {
+  $base?: ClassValue;
+  $default?: ClassValue;
+} & PropConditions<TProps>;
 
-// Utility types for type manipulation
-type PartialWithUndefined<T> = {
-  [K in keyof T]?: T[K] | undefined;
-};
+// ============================================================================
+// StyleFunction Types
+// ============================================================================
 
-type Simplify<T> = { [K in keyof T]: T[K] };
-
-// Style function that accepts props and returns class names
-export type StyleFunction<TProps = Props> = (
-  props?: Simplify<PartialWithUndefined<TProps> & ClassProp>,
-) => string;
-
-// Merges union types into a single type
-type MergeUnion<T> = {
-  [K in T extends unknown ? keyof T : never]: T extends unknown
-    ? K extends keyof T
-      ? T[K]
-      : never
-    : never;
-};
-
-// Extracts and merges props from an array of StyleFunctions
-export type MergeStyleFunctionProps<T extends readonly StyleFunction<any>[]> = MergeUnion<
-  {
-    [K in keyof T]: T[K] extends StyleFunction<infer P> ? P : never;
-  }[number]
+type NormalizeProps<T> = Flatten<
+  { [K in RequiredKeys<T>]: T[K] } & { [K in OptionalKeys<T>]?: T[K] }
 >;
 
-// Configuration for tailwind-merge
+export type StyleFunction<TProps = Props> = (RequiredKeys<TProps> extends never
+  ? (props?: Flatten<NormalizeProps<TProps> & ClassProp>) => string
+  : (props: Flatten<NormalizeProps<TProps> & ClassProp>) => string) & {
+  readonly __ntvProps?: TProps;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyStyleFunction = ((...args: any[]) => string) & {
+  readonly __ntvProps?: unknown;
+};
+
+// ============================================================================
+// Merge Utilities
+// ============================================================================
+
+type KeysOfUnion<T> = T extends unknown ? keyof T : never;
+
+type IsRequiredInAny<T, K extends PropertyKey> = T extends unknown
+  ? K extends keyof T
+    ? K extends RequiredKeys<T>
+      ? true
+      : never
+    : never
+  : never;
+
+type ValueFromUnion<T, K extends PropertyKey> = T extends unknown
+  ? K extends keyof T
+    ? Exclude<T[K], undefined>
+    : never
+  : never;
+
+type MergeProps<T> = Flatten<
+  {
+    [K in KeysOfUnion<T> as true extends IsRequiredInAny<T, K> ? K : never]: ValueFromUnion<T, K>;
+  } & {
+    [K in KeysOfUnion<T> as true extends IsRequiredInAny<T, K> ? never : K]?: ValueFromUnion<T, K>;
+  }
+>;
+
+type ExtractProps<T> = T extends { readonly __ntvProps?: infer P } ? NonNullable<P> : never;
+
+export type MergeStyleFunctionProps<T extends readonly AnyStyleFunction[]> = MergeProps<
+  { [K in keyof T]: ExtractProps<T[K]> }[number]
+>;
+
+// ============================================================================
+// Configuration Types
+// ============================================================================
+
 export type TwMergeConfig = Parameters<typeof extendTailwindMerge>[0];
 
-// Options for ntv functions
 export interface NtvOptions {
   /**
    * Whether to merge the class names with `tailwind-merge` library.

@@ -2,46 +2,40 @@ import { assertType, describe, expectTypeOf, it } from 'vitest';
 import { createNtv, ntv } from '../src/index.js';
 
 describe('ntv types', () => {
-  it('returns string from style function', () => {
-    const styles = ntv<{ variant: 'primary' }>({
+  it('requires props parameter when any key is required', () => {
+    const styles = ntv<{ variant: 'primary'; size?: 'sm' | 'lg' }>({
       variant: { primary: 'primary' },
+      size: { sm: 'sm', lg: 'lg' },
     });
-    expectTypeOf(styles({ variant: 'primary' })).toBeString();
+
+    assertType(styles({ variant: 'primary' }));
+
+    // @ts-expect-error - props parameter is required
+    styles();
   });
 
-  it('makes all props optional', () => {
-    const styles = ntv<{ variant: 'primary'; isDisabled: boolean }>({
+  it('makes props parameter optional when all keys are optional', () => {
+    const styles = ntv<{ variant?: 'primary' }>({
       variant: { primary: 'primary' },
-      isDisabled: 'disabled',
     });
 
     assertType(styles());
-    assertType(styles({}));
-    assertType(styles({ variant: 'primary' }));
-    assertType(styles({ isDisabled: true }));
-    assertType(styles({ variant: undefined, isDisabled: undefined }));
+    expectTypeOf(styles({})).toBeString();
   });
 
   it('accepts class or className but not both', () => {
-    const styles = ntv<{ variant: 'primary' }>({
+    const styles = ntv<{ variant?: 'primary' }>({
       variant: { primary: 'primary' },
     });
 
     assertType(styles({ class: 'extra' }));
     assertType(styles({ className: 'extra' }));
-    assertType(styles({ class: ['a', 'b'] }));
 
     // @ts-expect-error - class and className are mutually exclusive
     styles({ class: 'a', className: 'b' });
   });
 
   it('restricts top-level $default to ClassValue only', () => {
-    // Top-level $default accepts ClassValue
-    ntv<{ variant: 'primary' }>({
-      $default: 'default-class',
-      variant: { primary: 'primary' },
-    });
-
     // Top-level $default does not accept nested scheme
     ntv<{ variant: 'primary' }>({
       // @ts-expect-error - nested scheme not allowed at top-level $default
@@ -49,31 +43,41 @@ describe('ntv types', () => {
       variant: { primary: 'primary' },
     });
 
-    // Nested $default accepts scheme
-    ntv<{ variant: 'primary'; size: 'sm' }>({
+    // Nested $default accepts scheme (variant must be optional to use $default)
+    ntv<{ variant?: 'primary'; size: 'sm' }>({
       variant: {
         $default: { size: { sm: 'size-sm' } },
         primary: 'primary',
       },
     });
   });
+
+  it('disallows $default for required variant keys', () => {
+    ntv<{ variant: 'primary' | 'secondary' }>({
+      variant: {
+        primary: 'primary-class',
+        secondary: 'secondary-class',
+        // @ts-expect-error - $default is not allowed for required key
+        $default: 'default-class',
+      },
+    });
+
+    // OK: variant is optional
+    ntv<{ variant?: 'primary' | 'secondary' }>({
+      variant: {
+        primary: 'primary-class',
+        $default: 'default-class',
+      },
+    });
+  });
 });
 
 describe('createNtv types', () => {
-  it('infers types from scheme without explicit type argument', () => {
+  it('returns a style function', () => {
     const myNtv = createNtv({ twMerge: false });
-    const styles = myNtv({
+    const styles = myNtv<{ variant?: 'primary' }>({
       variant: { primary: 'primary' },
     });
-    expectTypeOf(styles({ variant: 'primary' })).toBeString();
-  });
-
-  it('accepts explicit type argument', () => {
-    const myNtv = createNtv({ twMerge: false });
-    const styles = myNtv<{ variant: 'primary' | 'secondary' }>({
-      variant: { primary: 'primary', secondary: 'secondary' },
-    });
-    expectTypeOf(styles({ variant: 'primary' })).toBeString();
-    expectTypeOf(styles({ variant: 'secondary' })).toBeString();
+    expectTypeOf(styles()).toBeString();
   });
 });

@@ -21,7 +21,7 @@ function validateScheme(scheme: Scheme): void {
  *
  * @example
  * ```ts
- * type ButtonProps = { variant: 'primary' | 'secondary'; isDisabled: boolean };
+ * type ButtonProps = { variant?: 'primary' | 'secondary'; isDisabled?: boolean };
  *
  * const button = ntv<ButtonProps>({
  *   $base: 'px-4 py-2 rounded',

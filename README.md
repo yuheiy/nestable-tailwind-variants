@@ -77,7 +77,7 @@ The `$base` property defines styles that are always applied at that level. It ca
 
 ```ts
 interface CardProps {
-  variant: 'elevated' | 'flat';
+  variant?: 'elevated' | 'flat';
 }
 
 const card = ntv<CardProps>({
@@ -100,8 +100,8 @@ When nested inside a variant or condition, `$base` applies whenever that context
 
 ```ts
 interface ButtonProps {
-  variant: 'primary' | 'secondary';
-  size: 'sm' | 'lg';
+  variant?: 'primary' | 'secondary';
+  size?: 'sm' | 'lg';
 }
 
 const button = ntv<ButtonProps>({
@@ -131,8 +131,8 @@ Use `$default` for styles applied when no conditions match at that level. Within
 
 ```ts
 interface ChipProps {
-  variant: 'filled' | 'outlined';
-  isSelected: boolean;
+  variant?: 'filled' | 'outlined';
+  isSelected?: boolean;
 }
 
 const chip = ntv<ChipProps>({
@@ -166,6 +166,28 @@ chip({ variant: 'filled', isSelected: true });
 // => 'inline-flex items-center rounded-full px-3 py-1 bg-blue-500 text-white'
 ```
 
+> **Note:** Within variant conditions, `$default` is only available when the variant key is optional. Required variant keys always have a value provided, so there's no fallback case:
+>
+> ```ts
+> // ❌ Error: variant is required, so $default is not allowed
+> ntv<{ variant: 'a' | 'b' }>({
+>   variant: {
+>     a: 'a-class',
+>     b: 'b-class',
+>     $default: 'default-class', // TypeScript error
+>   },
+> });
+>
+> // ✅ OK: variant is optional, so $default is allowed
+> ntv<{ variant?: 'a' | 'b' }>({
+>   variant: {
+>     a: 'a-class',
+>     b: 'b-class',
+>     $default: 'default-class',
+>   },
+> });
+> ```
+
 ### `$base` vs `$default`
 
 - **`$base`**: Always applied, regardless of whether conditions match
@@ -173,7 +195,7 @@ chip({ variant: 'filled', isSelected: true });
 
 ```ts
 interface ButtonProps {
-  isDisabled: boolean;
+  isDisabled?: boolean;
 }
 
 const button = ntv<ButtonProps>({
@@ -195,8 +217,8 @@ Define variants as objects mapping variant values to class names:
 
 ```ts
 interface BadgeProps {
-  size: 'sm' | 'md' | 'lg';
-  color: 'info' | 'success' | 'warning';
+  size?: 'sm' | 'md' | 'lg';
+  color?: 'info' | 'success' | 'warning';
 }
 
 const badge = ntv<BadgeProps>({
@@ -223,10 +245,10 @@ Keys matching `is[A-Z]*` or `allows[A-Z]*` are treated as boolean conditions:
 
 ```ts
 interface InputProps {
-  isFocused: boolean;
-  isDisabled: boolean;
-  isInvalid: boolean;
-  allowsClearing: boolean;
+  isFocused?: boolean;
+  isDisabled?: boolean;
+  isInvalid?: boolean;
+  allowsClearing?: boolean;
 }
 
 const input = ntv<InputProps>({
@@ -252,8 +274,8 @@ The core feature of nestable-tailwind-variants is the ability to nest conditions
 
 ```ts
 interface ChipProps {
-  variant: 'filled' | 'outlined';
-  isSelected: boolean;
+  variant?: 'filled' | 'outlined';
+  isSelected?: boolean;
 }
 
 const chip = ntv<ChipProps>({
@@ -286,10 +308,10 @@ You can nest conditions to any depth:
 
 ```ts
 interface ButtonProps {
-  variant: 'primary';
-  isHovered: boolean;
-  isPressed: boolean;
-  isDisabled: boolean;
+  variant?: 'primary';
+  isHovered?: boolean;
+  isPressed?: boolean;
+  isDisabled?: boolean;
 }
 
 const button = ntv<ButtonProps>({
@@ -328,7 +350,7 @@ Merge multiple style functions into one. Later functions take precedence:
 import { ntv, mergeNtv } from 'nestable-tailwind-variants';
 
 interface BaseButtonProps {
-  size: 'sm' | 'md';
+  size?: 'sm' | 'md';
 }
 
 const baseButton = ntv<BaseButtonProps>({
@@ -340,7 +362,7 @@ const baseButton = ntv<BaseButtonProps>({
 });
 
 interface ColoredButtonProps {
-  variant: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary';
 }
 
 const coloredButton = ntv<ColoredButtonProps>({
@@ -362,7 +384,7 @@ Pass additional classes using `class` or `className`:
 
 ```ts
 interface BoxProps {
-  variant: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary';
 }
 
 const box = ntv<BoxProps>({
@@ -469,8 +491,39 @@ const button = ntv<ButtonProps>({
   isDisabled: 'opacity-50',
 });
 
-button({ variant: 'primary', size: 'lg' }); // ✅ OK
+// All props are required - props parameter is mandatory
+button({ variant: 'primary', size: 'lg', isDisabled: false }); // ✅ OK
 button({ variant: 'tertiary' }); // ❌ Error: 'tertiary' is not assignable
+button({ variant: 'primary' }); // ❌ Error: missing 'size' and 'isDisabled'
+```
+
+Use optional properties (`?`) when you want to allow calling the style function without providing all props:
+
+```ts
+interface ButtonProps {
+  variant?: 'primary' | 'secondary';
+  size?: 'sm' | 'md' | 'lg';
+  isDisabled?: boolean;
+}
+
+const button = ntv<ButtonProps>({
+  $base: 'rounded',
+  variant: {
+    primary: 'bg-blue-500',
+    secondary: 'bg-gray-200',
+  },
+  size: {
+    sm: 'text-sm',
+    md: 'text-base',
+    lg: 'text-lg',
+  },
+  isDisabled: 'opacity-50',
+});
+
+// All props are optional - props parameter can be omitted
+button(); // ✅ OK
+button({ variant: 'primary' }); // ✅ OK
+button({ variant: 'primary', size: 'lg' }); // ✅ OK
 ```
 
 Omitting the type argument when the scheme has keys disables type checking. Provide explicit type arguments when possible for better type safety.

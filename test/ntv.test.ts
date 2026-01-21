@@ -9,7 +9,7 @@ describe('ntv', () => {
     });
 
     it('returns $default when no conditions match', () => {
-      const styles = ntv<{ variant: 'primary' }>({
+      const styles = ntv<{ variant?: 'primary' }>({
         $default: 'default-class',
         variant: { primary: 'primary-class' },
       });
@@ -53,7 +53,7 @@ describe('ntv', () => {
 
   describe('nested conditions', () => {
     it('resolves nested variant within variant', () => {
-      const styles = ntv<{ variant: 'primary'; size: 'sm' | 'lg' }>({
+      const styles = ntv<{ variant?: 'primary'; size?: 'sm' | 'lg' }>({
         $base: 'base',
         variant: {
           primary: {
@@ -70,7 +70,7 @@ describe('ntv', () => {
     });
 
     it('resolves nested variant within boolean condition', () => {
-      const styles = ntv<{ isSelected: boolean; variant: 'primary' | 'secondary' }>({
+      const styles = ntv<{ isSelected?: boolean; variant?: 'primary' | 'secondary' }>({
         $base: 'base',
         isSelected: {
           $default: 'selected-default',
@@ -87,7 +87,7 @@ describe('ntv', () => {
 
   describe('nested $base', () => {
     it('applies $base within nested conditions', () => {
-      const styles = ntv<{ variant: 'primary'; size: 'sm' | 'lg' }>({
+      const styles = ntv<{ variant?: 'primary'; size?: 'sm' | 'lg' }>({
         $base: 'root-base',
         variant: {
           primary: {
@@ -107,7 +107,7 @@ describe('ntv', () => {
 
   describe('nested $default', () => {
     it('resolves nested conditions within variant $default', () => {
-      const styles = ntv<{ variant: 'primary'; isDisabled: boolean }>({
+      const styles = ntv<{ variant?: 'primary'; isDisabled?: boolean }>({
         $base: 'root-base',
         variant: {
           $default: {
@@ -127,7 +127,7 @@ describe('ntv', () => {
 
   describe('$default accumulation', () => {
     it('accumulates $defaults based on matched conditions', () => {
-      const styles = ntv<{ variant: 'primary'; size: 'large' }>({
+      const styles = ntv<{ variant?: 'primary'; size?: 'large' }>({
         $base: 'base',
         $default: 'root-default',
         variant: {
@@ -184,7 +184,7 @@ describe('ntv', () => {
     });
 
     it('throws when $default is passed as runtime value', () => {
-      const styles = ntv<{ variant: 'primary' }>({
+      const styles = ntv<{ variant?: 'primary' }>({
         variant: { $default: 'default', primary: 'primary' },
       });
       expect(() => styles({ variant: '$default' as never })).toThrow(

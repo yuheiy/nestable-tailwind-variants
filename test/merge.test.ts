@@ -3,10 +3,10 @@ import { createMergeNtv, mergeNtv, mergeNtvWithOptions, ntv } from '../src/index
 
 describe('mergeNtv', () => {
   it('merges multiple style functions', () => {
-    const colorStyles = ntv<{ color: 'red' | 'blue' }>({
+    const colorStyles = ntv<{ color?: 'red' | 'blue' }>({
       color: { red: 'text-red', blue: 'text-blue' },
     });
-    const sizeStyles = ntv<{ size: 'sm' | 'lg' }>({
+    const sizeStyles = ntv<{ size?: 'sm' | 'lg' }>({
       size: { sm: 'text-sm', lg: 'text-lg' },
     });
 

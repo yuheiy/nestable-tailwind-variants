@@ -1,5 +1,11 @@
 import { twJoin, twMerge } from 'tailwind-merge';
-import type { ClassProp, MergeStyleFunctionProps, NtvOptions, StyleFunction } from './types.js';
+import type {
+  AnyStyleFunction,
+  ClassProp,
+  MergeStyleFunctionProps,
+  NtvOptions,
+  StyleFunction,
+} from './types.js';
 import { getCachedTwMerge } from './cache.js';
 
 /**
@@ -14,7 +20,7 @@ import { getCachedTwMerge } from './cache.js';
  * styles({ variant: 'primary' });
  * ```
  */
-export function mergeNtvWithOptions<T extends readonly StyleFunction<any>[]>(
+export function mergeNtvWithOptions<T extends readonly AnyStyleFunction[]>(
   ...styleFns: T
 ): (options?: NtvOptions) => StyleFunction<MergeStyleFunctionProps<T>> {
   return function createMergedStyleFn({
@@ -32,9 +38,9 @@ export function mergeNtvWithOptions<T extends readonly StyleFunction<any>[]>(
       className: slotClassName,
       ...props
     }: Record<string, unknown> & ClassProp = {}): string {
-      const styleResults = styleFns.map((fn) => fn(props));
+      const styleResults = styleFns.map((fn) => fn(props as any));
       return mergeFn(...styleResults, slotClass, slotClassName);
-    } as StyleFunction<MergeStyleFunctionProps<T>>;
+    } as unknown as StyleFunction<MergeStyleFunctionProps<T>>;
   };
 }
 
@@ -47,11 +53,11 @@ export function mergeNtvWithOptions<T extends readonly StyleFunction<any>[]>(
  *
  * @example
  * ```ts
- * const colorStyles = ntv<{ color: 'red' | 'blue' }>({
+ * const colorStyles = ntv<{ color?: 'red' | 'blue' }>({
  *   color: { red: 'text-red', blue: 'text-blue' },
  * });
  *
- * const sizeStyles = ntv<{ size: 'sm' | 'lg' }>({
+ * const sizeStyles = ntv<{ size?: 'sm' | 'lg' }>({
  *   size: { sm: 'text-sm', lg: 'text-lg' },
  * });
  *
@@ -59,10 +65,10 @@ export function mergeNtvWithOptions<T extends readonly StyleFunction<any>[]>(
  * styles({ color: 'red', size: 'lg' }); // 'text-red text-lg'
  * ```
  */
-export function mergeNtv<T extends readonly StyleFunction<any>[]>(
+export function mergeNtv<T extends readonly AnyStyleFunction[]>(
   ...styleFns: T
 ): StyleFunction<MergeStyleFunctionProps<T>> {
-  return mergeNtvWithOptions(...styleFns)();
+  return mergeNtvWithOptions(...styleFns)() as unknown as StyleFunction<MergeStyleFunctionProps<T>>;
 }
 
 /**
@@ -88,12 +94,14 @@ export function mergeNtv<T extends readonly StyleFunction<any>[]>(
  */
 export function createMergeNtv(
   defaultOptions: NtvOptions,
-): <T extends readonly StyleFunction<any>[]>(
+): <T extends readonly AnyStyleFunction[]>(
   ...styleFns: T
 ) => StyleFunction<MergeStyleFunctionProps<T>> {
-  return function configuredMergeNtv<T extends readonly StyleFunction<any>[]>(
+  return function configuredMergeNtv<T extends readonly AnyStyleFunction[]>(
     ...styleFns: T
   ): StyleFunction<MergeStyleFunctionProps<T>> {
-    return mergeNtvWithOptions(...styleFns)(defaultOptions);
+    return mergeNtvWithOptions(...styleFns)(defaultOptions) as unknown as StyleFunction<
+      MergeStyleFunctionProps<T>
+    >;
   };
 }
