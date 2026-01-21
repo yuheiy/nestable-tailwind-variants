@@ -1,6 +1,7 @@
 export { createMergeNtv, mergeNtv, mergeNtvWithOptions } from './merge.js';
 export { createNtv, ntv } from './ntv.js';
 export type {
+  AnyStyleFunction,
   ClassProp,
   ClassValue,
   MergeStyleFunctionProps,
