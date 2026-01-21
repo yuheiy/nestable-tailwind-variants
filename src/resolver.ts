@@ -16,12 +16,8 @@ export function resolveConditions(
   const classes: ClassValue[] = [];
   let hasMatchedCondition = false;
 
-  function addClasses(value: unknown): void {
-    if (isPlainObject(value)) {
-      classes.push(...resolveConditions(value, props));
-    } else {
-      classes.push(value as ClassValue);
-    }
+  function toClassValues(value: unknown): ClassValue[] {
+    return isPlainObject(value) ? resolveConditions(value, props) : [value as ClassValue];
   }
 
   for (const [key, value] of Object.entries(conditions)) {
@@ -37,19 +33,18 @@ export function resolveConditions(
     if (/^is[A-Z]/.test(key) || /^allows[A-Z]/.test(key)) {
       if (propValue) {
         hasMatchedCondition = true;
-        addClasses(value);
+        classes.push(...toClassValues(value));
       }
       continue;
     }
 
     // Variant conditions (nested objects)
     if (isPlainObject(value)) {
-      if (typeof propValue === 'string' && propValue in value) {
+      const matched = typeof propValue === 'string' && propValue in value;
+      if (matched) {
         hasMatchedCondition = true;
-        addClasses(value[propValue]);
-      } else {
-        classes.push(value['$default'] as ClassValue);
       }
+      classes.push(...toClassValues(value[matched ? propValue : '$default']));
     }
   }
 

@@ -74,7 +74,7 @@ type VariantSchemeEntry<TVariant extends string, TProps extends NtvProps> = {
   [V in TVariant]?:
     | ClassValue
     | (SchemeFor<TProps> & { $base?: ClassValue; $default?: ClassValue });
-} & { $default?: ClassValue };
+} & { $default?: ClassValue | (SchemeFor<TProps> & { $base?: ClassValue; $default?: ClassValue }) };
 
 /**
  * Scheme conditions based on the props type.

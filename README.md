@@ -127,7 +127,7 @@ button({ variant: 'primary', size: 'sm' });
 
 ### `$default` - Fallback styles
 
-Use `$default` for styles applied when no conditions match at that level:
+Use `$default` for styles applied when no conditions match at that level. Within variants, `$default` can also contain nested conditions:
 
 ```ts
 interface ChipProps {
@@ -138,7 +138,10 @@ interface ChipProps {
 const chip = ntv<ChipProps>({
   $base: 'inline-flex items-center rounded-full px-3 py-1',
   variant: {
-    $default: 'bg-gray-100', // Applied when variant is not specified
+    $default: {
+      $base: 'bg-gray-100', // Applied when variant is not specified
+      isSelected: 'bg-gray-200', // Applied when isSelected and no variant
+    },
     filled: {
       $default: 'bg-gray-200 text-gray-800', // Applied when isSelected is false
       isSelected: 'bg-blue-500 text-white',
@@ -152,6 +155,9 @@ const chip = ntv<ChipProps>({
 
 chip();
 // => 'inline-flex items-center rounded-full px-3 py-1 bg-gray-100'
+
+chip({ isSelected: true });
+// => 'inline-flex items-center rounded-full px-3 py-1 bg-gray-200'
 
 chip({ variant: 'filled' });
 // => 'inline-flex items-center rounded-full px-3 py-1 bg-gray-200 text-gray-800'

@@ -105,6 +105,26 @@ describe('ntv', () => {
     });
   });
 
+  describe('nested $default', () => {
+    it('resolves nested conditions within variant $default', () => {
+      const styles = ntv<{ variant: 'primary'; isDisabled: boolean }>({
+        $base: 'root-base',
+        variant: {
+          $default: {
+            $base: 'variant-default-base',
+            isDisabled: 'variant-default-disabled',
+          },
+          primary: 'primary-class',
+        },
+      });
+      expect(styles()).toBe('root-base variant-default-base');
+      expect(styles({ isDisabled: true })).toBe(
+        'root-base variant-default-base variant-default-disabled',
+      );
+      expect(styles({ variant: 'primary' })).toBe('root-base primary-class');
+    });
+  });
+
   describe('$default accumulation', () => {
     it('accumulates $defaults based on matched conditions', () => {
       const styles = ntv<{ variant: 'primary'; size: 'large' }>({
