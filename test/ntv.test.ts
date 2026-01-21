@@ -85,6 +85,26 @@ describe('ntv', () => {
     });
   });
 
+  describe('nested $base', () => {
+    it('applies $base within nested conditions', () => {
+      const styles = ntv<{ variant: 'primary'; size: 'sm' | 'lg' }>({
+        $base: 'root-base',
+        variant: {
+          primary: {
+            $base: 'variant-base',
+            $default: 'variant-default',
+            size: {
+              sm: 'size-sm',
+              lg: 'size-lg',
+            },
+          },
+        },
+      });
+      expect(styles({ variant: 'primary' })).toBe('root-base variant-base variant-default');
+      expect(styles({ variant: 'primary', size: 'sm' })).toBe('root-base variant-base size-sm');
+    });
+  });
+
   describe('$default accumulation', () => {
     it('accumulates $defaults based on matched conditions', () => {
       const styles = ntv<{ variant: 'primary'; size: 'large' }>({
@@ -140,12 +160,6 @@ describe('ntv', () => {
     it('throws when scheme contains "className"', () => {
       expect(() => ntv({ className: 'invalid' })).toThrow(
         'The "className" property is not allowed in ntv scheme',
-      );
-    });
-
-    it('throws when $base is nested', () => {
-      expect(() => ntv({ variant: { primary: { $base: 'nested' } } })).toThrow(
-        'The "$base" property is only allowed at the top level',
       );
     });
 

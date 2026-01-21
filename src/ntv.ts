@@ -9,7 +9,6 @@ import type {
 } from './types.js';
 import { getCachedTwMerge } from './cache.js';
 import { resolveConditions } from './resolver.js';
-import { isPlainObject } from './utils.js';
 
 function validateScheme(scheme: NtvScheme): void {
   if ('class' in scheme) {
@@ -18,24 +17,6 @@ function validateScheme(scheme: NtvScheme): void {
 
   if ('className' in scheme) {
     throw new Error('The "className" property is not allowed in ntv scheme. Use "$base" instead.');
-  }
-
-  validateNoNestedSpecialKeys(scheme, false);
-}
-
-function validateNoNestedSpecialKeys(obj: Record<string, unknown>, isNested: boolean): void {
-  for (const [key, value] of Object.entries(obj)) {
-    // Check if this is a top-level-only key in a nested context
-    if (isNested && key === '$base') {
-      throw new Error(
-        `The "${key}" property is only allowed at the top level of ntv scheme. It cannot be nested inside variants or conditions.`,
-      );
-    }
-
-    // Recursively validate nested objects
-    if (isPlainObject(value)) {
-      validateNoNestedSpecialKeys(value, true);
-    }
   }
 }
 
@@ -74,8 +55,6 @@ export function ntv(
 ): StyleFunction<any> {
   validateScheme(scheme);
 
-  const { $base, ...conditions } = scheme;
-
   const mergeFn = usesTwMerge
     ? twMergeConfig
       ? getCachedTwMerge(twMergeConfig)
@@ -87,7 +66,7 @@ export function ntv(
     className: slotClassName,
     ...props
   }: Record<string, unknown> & ClassProp = {}): string {
-    return mergeFn($base, ...resolveConditions(conditions, props), slotClass, slotClassName);
+    return mergeFn(...resolveConditions(scheme, props), slotClass, slotClassName);
   };
 }
 

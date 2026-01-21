@@ -73,7 +73,7 @@ npm install nestable-tailwind-variants
 
 ### `$base` - Always-applied styles
 
-The `$base` property defines styles that are always included in the output:
+The `$base` property defines styles that are always applied at that level. It can be used at the top level or nested inside variants and conditions:
 
 ```ts
 interface CardProps {
@@ -94,6 +94,93 @@ card();
 card({ variant: 'elevated' });
 // => 'rounded-lg shadow-xl p-4'
 // Note: shadow-md is replaced by shadow-xl via tailwind-merge
+```
+
+When nested inside a variant or condition, `$base` applies whenever that context is entered:
+
+```ts
+interface ButtonProps {
+  variant: 'primary' | 'secondary';
+  size: 'sm' | 'lg';
+}
+
+const button = ntv<ButtonProps>({
+  $base: 'px-4 py-2',
+  variant: {
+    primary: {
+      $base: 'bg-blue-500 text-white', // Applied when variant='primary'
+      size: {
+        sm: 'text-sm',
+        lg: 'text-lg',
+      },
+    },
+    secondary: 'bg-gray-500',
+  },
+});
+
+button({ variant: 'primary' });
+// => 'px-4 py-2 bg-blue-500 text-white'
+
+button({ variant: 'primary', size: 'sm' });
+// => 'px-4 py-2 bg-blue-500 text-white text-sm'
+```
+
+### `$default` - Fallback styles
+
+Use `$default` for styles applied when no conditions match at that level:
+
+```ts
+interface ChipProps {
+  variant: 'filled' | 'outlined';
+  isSelected: boolean;
+}
+
+const chip = ntv<ChipProps>({
+  $base: 'inline-flex items-center rounded-full px-3 py-1',
+  variant: {
+    $default: 'bg-gray-100', // Applied when variant is not specified
+    filled: {
+      $default: 'bg-gray-200 text-gray-800', // Applied when isSelected is false
+      isSelected: 'bg-blue-500 text-white',
+    },
+    outlined: {
+      $default: 'border border-gray-300 text-gray-800',
+      isSelected: 'border-blue-500 text-blue-500',
+    },
+  },
+});
+
+chip();
+// => 'inline-flex items-center rounded-full px-3 py-1 bg-gray-100'
+
+chip({ variant: 'filled' });
+// => 'inline-flex items-center rounded-full px-3 py-1 bg-gray-200 text-gray-800'
+
+chip({ variant: 'filled', isSelected: true });
+// => 'inline-flex items-center rounded-full px-3 py-1 bg-blue-500 text-white'
+```
+
+### `$base` vs `$default`
+
+- **`$base`**: Always applied, regardless of whether conditions match
+- **`$default`**: Only applied when no conditions match
+
+```ts
+interface ButtonProps {
+  isDisabled: boolean;
+}
+
+const button = ntv<ButtonProps>({
+  $base: 'px-4 py-2', // Always applied
+  $default: 'bg-blue-500', // Only applied when isDisabled is false
+  isDisabled: 'bg-gray-300 cursor-not-allowed',
+});
+
+button();
+// => 'px-4 py-2 bg-blue-500'
+
+button({ isDisabled: true });
+// => 'px-4 py-2 bg-gray-300 cursor-not-allowed'
 ```
 
 ### Variants - String-based selection
@@ -149,65 +236,6 @@ input({ isFocused: true });
 
 input({ isDisabled: true, isInvalid: true });
 // => 'border rounded px-3 py-2 bg-gray-100 text-gray-400 cursor-not-allowed border-red-500 text-red-600'
-```
-
-### `$default` - Fallback styles
-
-Use `$default` for styles applied when no conditions match:
-
-```ts
-interface TextProps {
-  variant: 'primary' | 'danger';
-}
-
-const text = ntv<TextProps>({
-  $default: 'text-gray-500',
-  variant: {
-    primary: 'text-blue-600',
-    danger: 'text-red-600',
-  },
-});
-
-text();
-// => 'text-gray-500'
-
-text({ variant: 'primary' });
-// => 'text-blue-600'
-```
-
-When `$default` is nested inside variants, they accumulate only when no conditions match at each level:
-
-```ts
-interface Props {
-  variant: 'primary';
-  size: 'large';
-}
-
-const styles = ntv<Props>({
-  $base: 'base',
-  $default: 'root-default',
-  variant: {
-    $default: 'variant-default',
-    primary: {
-      size: {
-        $default: 'size-default',
-        large: 'size-large',
-      },
-    },
-  },
-});
-
-styles();
-// => 'base root-default variant-default'
-// No conditions matched, so $defaults accumulate
-
-styles({ variant: 'primary' });
-// => 'base size-default'
-// variant matched, so only nested $default is applied
-
-styles({ variant: 'primary', size: 'large' });
-// => 'base size-large'
-// Both matched, so no $defaults are applied
 ```
 
 ## Nested Conditions
@@ -601,13 +629,13 @@ export default [
 
 ### Scheme Properties
 
-| Property       | Description                                          |
-| -------------- | ---------------------------------------------------- |
-| `$base`        | Classes always applied (top-level only)              |
-| `$default`     | Fallback classes when no conditions match            |
-| `is[A-Z]*`     | Boolean condition (e.g., `isSelected`, `isDisabled`) |
-| `allows[A-Z]*` | Boolean condition (e.g., `allowsRemoving`)           |
-| `[key]`        | Variant object mapping values to classes             |
+| Property       | Description                                                                                 |
+| -------------- | ------------------------------------------------------------------------------------------- |
+| `$base`        | Classes always applied at that level (can be used at top-level or nested within conditions) |
+| `$default`     | Fallback classes when no conditions match at that level                                     |
+| `is[A-Z]*`     | Boolean condition (e.g., `isSelected`, `isDisabled`)                                        |
+| `allows[A-Z]*` | Boolean condition (e.g., `allowsRemoving`)                                                  |
+| `[key]`        | Variant object mapping values to classes                                                    |
 
 ## License
 

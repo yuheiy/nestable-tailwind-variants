@@ -10,7 +10,7 @@ import { isPlainObject } from './utils.js';
  * - When no conditions match, $defaults accumulate from each unmatched level
  */
 export function resolveConditions(
-  { $default, ...conditions }: Record<string, unknown>,
+  { $base, $default, ...conditions }: Record<string, unknown>,
   props: Record<string, unknown>,
 ): ClassValue[] {
   const classes: ClassValue[] = [];
@@ -56,6 +56,8 @@ export function resolveConditions(
   if (!hasMatchedCondition) {
     classes.unshift($default as ClassValue);
   }
+
+  classes.unshift($base as ClassValue);
 
   return classes;
 }

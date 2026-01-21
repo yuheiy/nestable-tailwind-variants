@@ -65,13 +65,15 @@ export type StyleFunction<TProps> = (
  */
 type BooleanSchemeEntry<TProps extends NtvProps> =
   | ClassValue
-  | (SchemeFor<TProps> & { $default?: ClassValue });
+  | (SchemeFor<TProps> & { $base?: ClassValue; $default?: ClassValue });
 
 /**
  * Variant scheme entry - maps variant values to class values or nested schemes.
  */
 type VariantSchemeEntry<TVariant extends string, TProps extends NtvProps> = {
-  [V in TVariant]?: ClassValue | (SchemeFor<TProps> & { $default?: ClassValue });
+  [V in TVariant]?:
+    | ClassValue
+    | (SchemeFor<TProps> & { $base?: ClassValue; $default?: ClassValue });
 } & { $default?: ClassValue };
 
 /**
