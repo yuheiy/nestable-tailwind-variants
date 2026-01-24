@@ -188,7 +188,7 @@ describe('ntv', () => {
         variant: { $default: 'default', primary: 'primary' },
       });
       expect(() => styles({ variant: '$default' as never })).toThrow(
-        'The value "$default" cannot be passed as a runtime value',
+        '"$default" is reserved for defining fallback styles and cannot be used as a value',
       );
     });
   });

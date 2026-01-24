@@ -28,7 +28,7 @@ export function resolveConditions(
 
     if (propValue === '$default') {
       throw new Error(
-        `The value "$default" cannot be passed as a runtime value for "${key}". "$default" is a reserved keyword.`,
+        `"$default" is reserved for defining fallback styles and cannot be used as a value for "${key}".`,
       );
     }
 
