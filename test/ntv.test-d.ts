@@ -51,25 +51,6 @@ describe('ntv types', () => {
       },
     });
   });
-
-  it('disallows $default for required variant keys', () => {
-    ntv<{ variant: 'primary' | 'secondary' }>({
-      variant: {
-        primary: 'primary-class',
-        secondary: 'secondary-class',
-        // @ts-expect-error - $default is not allowed for required key
-        $default: 'default-class',
-      },
-    });
-
-    // OK: variant is optional
-    ntv<{ variant?: 'primary' | 'secondary' }>({
-      variant: {
-        primary: 'primary-class',
-        $default: 'default-class',
-      },
-    });
-  });
 });
 
 describe('createNtv types', () => {

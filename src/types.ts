@@ -36,22 +36,17 @@ type NestedScheme<TProps extends Props = {}> = {
   $default?: ClassValue | NestedScheme<TProps>;
 } & PropConditions<TProps>;
 
-type VariantMapping<
-  TVariant extends string,
-  TProps extends Props,
-  TAllowDefault extends boolean,
-> = {
+type VariantMapping<TVariant extends string, TProps extends Props> = {
   [V in TVariant]?: ClassValue | NestedScheme<TProps>;
-} & (TAllowDefault extends true
-  ? { $default?: ClassValue | NestedScheme<TProps> }
-  : // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-    {});
+} & {
+  $default?: ClassValue | NestedScheme<TProps>;
+};
 
 type PropConditions<TProps extends Props> = {
   [K in keyof TProps & string]?: NonNullable<TProps[K]> extends boolean
     ? ClassValue | NestedScheme<TProps>
     : NonNullable<TProps[K]> extends string
-      ? VariantMapping<NonNullable<TProps[K]>, TProps, undefined extends TProps[K] ? true : false>
+      ? VariantMapping<NonNullable<TProps[K]>, TProps>
       : never;
 };
 
