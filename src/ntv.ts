@@ -1,7 +1,66 @@
 import { twJoin, twMerge } from 'tailwind-merge';
-import type { ClassProp, NtvOptions, Scheme, StyleFunction } from './types.js';
+import type { ClassProp, ClassValue, NtvOptions, Scheme, StyleFunction } from './types.js';
 import { getCachedTwMerge } from './cache.js';
-import { resolveConditions } from './resolver.js';
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Resolves conditions from scheme based on provided props to generate class values.
+ *
+ * $default behavior:
+ * - If no conditions match at a level, that level's $default is applied
+ * - If a variant matches, only the nested evaluation result is used
+ * - When no conditions match, $defaults accumulate from each unmatched level
+ */
+function resolveConditions(
+  { $base, $default, ...conditions }: Record<string, unknown>,
+  props: Record<string, unknown>,
+): ClassValue[] {
+  const classes: ClassValue[] = [];
+  let hasMatchedCondition = false;
+
+  function toClassValues(value: unknown): ClassValue[] {
+    return isPlainObject(value) ? resolveConditions(value, props) : [value as ClassValue];
+  }
+
+  for (const [key, value] of Object.entries(conditions)) {
+    const propValue = props[key];
+
+    if (propValue === '$default') {
+      throw new Error(
+        `"$default" is reserved for defining fallback styles and cannot be used as a value for "${key}".`,
+      );
+    }
+
+    // Boolean conditions (isXxx or allowsXxx)
+    if (/^is[A-Z]/.test(key) || /^allows[A-Z]/.test(key)) {
+      if (propValue) {
+        hasMatchedCondition = true;
+        classes.push(...toClassValues(value));
+      }
+      continue;
+    }
+
+    // Variant conditions (nested objects)
+    if (isPlainObject(value)) {
+      const matched = typeof propValue === 'string' && propValue in value;
+      if (matched) {
+        hasMatchedCondition = true;
+      }
+      classes.push(...toClassValues(value[matched ? propValue : '$default']));
+    }
+  }
+
+  if (!hasMatchedCondition) {
+    classes.unshift($default as ClassValue);
+  }
+
+  classes.unshift($base as ClassValue);
+
+  return classes;
+}
 
 /**
  * Create a nestable tailwind variants style function.
