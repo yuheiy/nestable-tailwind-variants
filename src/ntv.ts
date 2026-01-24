@@ -43,6 +43,7 @@ export function ntv(
   if ('class' in scheme) {
     throw new Error('The "class" property is not allowed in ntv scheme. Use "$base" instead.');
   }
+
   if ('className' in scheme) {
     throw new Error('The "className" property is not allowed in ntv scheme. Use "$base" instead.');
   }
