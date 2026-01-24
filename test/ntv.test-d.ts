@@ -62,3 +62,38 @@ describe('createNtv types', () => {
     expectTypeOf(styles()).toBeString();
   });
 });
+
+describe('union type props', () => {
+  it('allows keys from all union members in scheme', () => {
+    // Union types create exclusive props - can use either isPending OR isCurrent, but not both
+    const styles = ntv<{ isPending: boolean } | { isCurrent: boolean }>({
+      isPending: 'pending-class',
+      isCurrent: 'current-class',
+    });
+
+    // Each union member can be used independently
+    assertType(styles({ isPending: true }));
+    assertType(styles({ isCurrent: true }));
+
+    // @ts-expect-error - cannot mix union members
+    styles({ isPending: true, isCurrent: true });
+  });
+
+  it('handles mixed boolean and variant keys in union', () => {
+    // Union can contain different prop types - boolean vs string variants
+    const styles = ntv<{ isActive: boolean } | { variant: 'primary' | 'secondary' }>({
+      isActive: 'active-class',
+      variant: {
+        primary: 'primary-class',
+        secondary: 'secondary-class',
+      },
+    });
+
+    // Each union member works with its appropriate value type
+    assertType(styles({ isActive: true }));
+    assertType(styles({ variant: 'primary' }));
+
+    // @ts-expect-error - cannot mix union members
+    styles({ isActive: true, variant: 'primary' });
+  });
+});

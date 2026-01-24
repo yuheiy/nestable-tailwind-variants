@@ -26,6 +26,23 @@ type RequiredKeys<T> = {
 
 type OptionalKeys<T> = Exclude<keyof T, RequiredKeys<T>>;
 
+// Union type utilities
+type KeysOfUnion<T> = T extends unknown ? keyof T : never;
+
+type IsRequiredInAny<T, K extends PropertyKey> = T extends unknown
+  ? K extends keyof T
+    ? K extends RequiredKeys<T>
+      ? true
+      : never
+    : never
+  : never;
+
+type ValueFromUnion<T, K extends PropertyKey> = T extends unknown
+  ? K extends keyof T
+    ? Exclude<T[K], undefined>
+    : never
+  : never;
+
 // ============================================================================
 // Scheme Types
 // ============================================================================
@@ -42,12 +59,15 @@ type VariantMapping<TVariant extends string, TProps extends Props> = {
   $default?: ClassValue | NestedScheme<TProps>;
 };
 
-type PropConditions<TProps extends Props> = {
-  [K in keyof TProps & string]?: NonNullable<TProps[K]> extends boolean
+type GetPropConditionValue<TProps extends Props, K extends PropertyKey> =
+  NonNullable<ValueFromUnion<TProps, K>> extends boolean
     ? ClassValue | NestedScheme<TProps>
-    : NonNullable<TProps[K]> extends string
-      ? VariantMapping<NonNullable<TProps[K]>, TProps>
+    : NonNullable<ValueFromUnion<TProps, K>> extends string
+      ? VariantMapping<NonNullable<ValueFromUnion<TProps, K>>, TProps>
       : never;
+
+type PropConditions<TProps extends Props> = {
+  [K in KeysOfUnion<TProps> & string]?: GetPropConditionValue<TProps, K>;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -60,13 +80,19 @@ export type Scheme<TProps extends Props = {}> = {
 // StyleFunction Types
 // ============================================================================
 
-type NormalizeProps<T> = Flatten<
-  { [K in RequiredKeys<T>]: T[K] } & { [K in OptionalKeys<T>]?: T[K] }
->;
+type NormalizeProps<T, TOriginal = T> = T extends unknown
+  ? Flatten<
+      { [K in RequiredKeys<T>]: T[K] } & { [K in OptionalKeys<T>]?: T[K] } & {
+        [K in Exclude<KeysOfUnion<TOriginal>, keyof T>]?: never;
+      }
+    >
+  : never;
 
-export type StyleFunction<TProps = Props> = (RequiredKeys<TProps> extends never
-  ? (props?: Flatten<NormalizeProps<TProps> & ClassProp>) => string
-  : (props: Flatten<NormalizeProps<TProps> & ClassProp>) => string) & {
+type HasRequiredKey<T> = true extends IsRequiredInAny<T, KeysOfUnion<T>> ? true : false;
+
+export type StyleFunction<TProps = Props> = (HasRequiredKey<TProps> extends false
+  ? (props?: NormalizeProps<TProps> & ClassProp) => string
+  : (props: NormalizeProps<TProps> & ClassProp) => string) & {
   readonly __ntvProps?: TProps;
 };
 
@@ -78,22 +104,6 @@ export type AnyStyleFunction = ((...args: any[]) => string) & {
 // ============================================================================
 // Merge Utilities
 // ============================================================================
-
-type KeysOfUnion<T> = T extends unknown ? keyof T : never;
-
-type IsRequiredInAny<T, K extends PropertyKey> = T extends unknown
-  ? K extends keyof T
-    ? K extends RequiredKeys<T>
-      ? true
-      : never
-    : never
-  : never;
-
-type ValueFromUnion<T, K extends PropertyKey> = T extends unknown
-  ? K extends keyof T
-    ? Exclude<T[K], undefined>
-    : never
-  : never;
 
 type MergeProps<T> = Flatten<
   {
