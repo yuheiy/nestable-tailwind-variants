@@ -2,19 +2,112 @@ import { describe, expect, it } from 'vitest';
 import { createNtv, ntv } from '../src/index.js';
 
 describe('ntv', () => {
-  describe('basic', () => {
-    it('returns $base when no conditions defined', () => {
+  describe('$base', () => {
+    it('applies $base when no conditions defined', () => {
       const styles = ntv({ $base: 'base-class' });
       expect(styles()).toBe('base-class');
     });
 
-    it('returns $default when no conditions match', () => {
+    it('applies $base with empty props', () => {
+      const styles = ntv({ $base: 'base-class' });
+      expect(styles({})).toBe('base-class');
+    });
+
+    it('applies $base with array class value', () => {
+      const styles = ntv({ $base: ['class-a', 'class-b'] });
+      expect(styles()).toBe('class-a class-b');
+    });
+
+    it('applies both $base and $default', () => {
+      const styles = ntv({ $base: 'base-class', $default: 'default-class' });
+      expect(styles()).toBe('base-class default-class');
+    });
+  });
+
+  describe('$default', () => {
+    it('applies $default when no conditions match', () => {
       const styles = ntv<{ variant?: 'primary' }>({
         $default: 'default-class',
         variant: { primary: 'primary-class' },
       });
       expect(styles()).toBe('default-class');
+    });
+
+    it('applies $default when no boolean conditions match', () => {
+      const styles = ntv<{ isHovered?: boolean }>({
+        $default: 'default-class',
+        isHovered: 'hovered-class',
+      });
+      expect(styles()).toBe('default-class');
+      expect(styles({ isHovered: false })).toBe('default-class');
+    });
+
+    it('does not apply $default when boolean condition matches', () => {
+      const styles = ntv<{ isHovered?: boolean }>({
+        $default: 'default-class',
+        isHovered: 'hovered-class',
+      });
+      expect(styles({ isHovered: true })).toBe('hovered-class');
+    });
+
+    it('applies $default even when variant matches', () => {
+      const styles = ntv<{ variant?: 'primary' }>({
+        $default: 'default-class',
+        variant: { primary: 'primary-class' },
+      });
       expect(styles({ variant: 'primary' })).toBe('default-class primary-class');
+    });
+
+    it('accumulates $defaults from nested levels', () => {
+      const styles = ntv<{ variant?: 'primary'; size?: 'large' }>({
+        $base: 'base',
+        $default: 'root-default',
+        variant: {
+          $default: 'variant-default',
+          primary: {
+            size: {
+              $default: 'size-default',
+              large: 'size-large',
+            },
+          },
+        },
+      });
+      expect(styles()).toBe('base root-default variant-default');
+      expect(styles({ variant: 'primary' })).toBe('base root-default size-default');
+      expect(styles({ variant: 'primary', size: 'large' })).toBe('base root-default size-large');
+    });
+
+    it('applies $default with boolean and variant conditions', () => {
+      const styles = ntv<{ isHovered?: boolean; variant?: 'primary' }>({
+        $default: 'root-default',
+        isHovered: 'root-hovered',
+        variant: {
+          $default: 'variant-default',
+          primary: 'variant-primary',
+        },
+      });
+      expect(styles()).toBe('root-default variant-default');
+      expect(styles({ isHovered: true })).toBe('root-hovered variant-default');
+      expect(styles({ variant: 'primary' })).toBe('root-default variant-primary');
+      expect(styles({ isHovered: true, variant: 'primary' })).toBe('root-hovered variant-primary');
+    });
+
+    it('resolves nested conditions within variant $default', () => {
+      const styles = ntv<{ variant?: 'primary'; isDisabled?: boolean }>({
+        $base: 'root-base',
+        variant: {
+          $default: {
+            $base: 'variant-default-base',
+            isDisabled: 'variant-default-disabled',
+          },
+          primary: 'primary-class',
+        },
+      });
+      expect(styles()).toBe('root-base variant-default-base');
+      expect(styles({ isDisabled: true })).toBe(
+        'root-base variant-default-base variant-default-disabled',
+      );
+      expect(styles({ variant: 'primary' })).toBe('root-base primary-class');
     });
   });
 
@@ -29,6 +122,30 @@ describe('ntv', () => {
       });
       expect(styles({ variant: 'primary' })).toBe('base primary');
       expect(styles({ variant: 'secondary' })).toBe('base secondary');
+    });
+
+    it('falls back to $default when variant value not in mapping', () => {
+      const styles = ntv<{ variant?: 'a' | 'b' }>({
+        variant: { $default: 'default', a: 'a-class' },
+      });
+      expect(styles({ variant: 'b' })).toBe('default');
+    });
+
+    it('handles undefined variant value', () => {
+      const styles = ntv<{ variant?: 'primary' }>({
+        variant: { $default: 'default', primary: 'primary' },
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect(styles({ variant: undefined } as any)).toBe('default');
+    });
+
+    it('uses array class value for variant', () => {
+      const styles = ntv<{ variant: 'primary' }>({
+        variant: {
+          primary: ['class-a', 'class-b'],
+        },
+      });
+      expect(styles({ variant: 'primary' })).toBe('class-a class-b');
     });
   });
 
@@ -48,6 +165,31 @@ describe('ntv', () => {
         allowsRemoval: 'removable',
       });
       expect(styles({ allowsRemoval: true })).toBe('base removable');
+    });
+
+    it('applies multiple boolean conditions when all are true', () => {
+      const styles = ntv<{ isHovered?: boolean; isPressed?: boolean }>({
+        $base: 'base',
+        isHovered: 'hovered',
+        isPressed: 'pressed',
+      });
+      expect(styles({ isHovered: true, isPressed: true })).toBe('base hovered pressed');
+    });
+
+    it('ignores falsy boolean values', () => {
+      const styles = ntv<{ isDisabled?: boolean }>({
+        $base: 'base',
+        isDisabled: 'disabled',
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect(styles({ isDisabled: undefined } as any)).toBe('base');
+    });
+
+    it('uses array class value for boolean condition', () => {
+      const styles = ntv<{ isDisabled: boolean }>({
+        isDisabled: ['disabled-a', 'disabled-b'],
+      });
+      expect(styles({ isDisabled: true })).toBe('disabled-a disabled-b');
     });
   });
 
@@ -85,9 +227,7 @@ describe('ntv', () => {
         'base selected-default selected-primary',
       );
     });
-  });
 
-  describe('nested $base', () => {
     it('applies $base within nested conditions', () => {
       const styles = ntv<{ variant?: 'primary'; size?: 'sm' | 'lg' }>({
         $base: 'root-base',
@@ -107,63 +247,26 @@ describe('ntv', () => {
         'root-base variant-base variant-default size-sm',
       );
     });
-  });
 
-  describe('nested $default', () => {
-    it('resolves nested conditions within variant $default', () => {
-      const styles = ntv<{ variant?: 'primary'; isDisabled?: boolean }>({
-        $base: 'root-base',
+    it('handles deeply nested conditions (3 levels)', () => {
+      const styles = ntv<{
+        variant?: 'a';
+        size?: 'sm';
+        isHovered?: boolean;
+      }>({
         variant: {
-          $default: {
-            $base: 'variant-default-base',
-            isDisabled: 'variant-default-disabled',
-          },
-          primary: 'primary-class',
-        },
-      });
-      expect(styles()).toBe('root-base variant-default-base');
-      expect(styles({ isDisabled: true })).toBe(
-        'root-base variant-default-base variant-default-disabled',
-      );
-      expect(styles({ variant: 'primary' })).toBe('root-base primary-class');
-    });
-  });
-
-  describe('$default accumulation', () => {
-    it('accumulates $defaults based on matched conditions', () => {
-      const styles = ntv<{ variant?: 'primary'; size?: 'large' }>({
-        $base: 'base',
-        $default: 'root-default',
-        variant: {
-          $default: 'variant-default',
-          primary: {
+          a: {
             size: {
-              $default: 'size-default',
-              large: 'size-large',
+              sm: {
+                $default: 'a-sm-default',
+                isHovered: 'a-sm-hovered',
+              },
             },
           },
         },
       });
-      expect(styles()).toBe('base root-default variant-default');
-      expect(styles({ variant: 'primary' })).toBe('base root-default size-default');
-      expect(styles({ variant: 'primary', size: 'large' })).toBe('base root-default size-large');
-    });
-  });
-
-  describe('$default with boolean and variant conditions', () => {
-    it('applies root $default when only variant matches', () => {
-      const styles = ntv<{ isHovered?: boolean; variant?: 'primary' }>({
-        $default: 'root-default',
-        isHovered: 'root-hovered',
-        variant: {
-          $default: 'variant-default',
-          primary: 'variant-primary',
-        },
-      });
-      expect(styles()).toBe('root-default variant-default');
-      expect(styles({ isHovered: true })).toBe('root-hovered variant-default');
-      expect(styles({ variant: 'primary' })).toBe('root-default variant-primary');
-      expect(styles({ isHovered: true, variant: 'primary' })).toBe('root-hovered variant-primary');
+      expect(styles({ variant: 'a', size: 'sm' })).toBe('a-sm-default');
+      expect(styles({ variant: 'a', size: 'sm', isHovered: true })).toBe('a-sm-hovered');
     });
   });
 
@@ -182,12 +285,59 @@ describe('ntv', () => {
       const styles = ntv({ $base: 'p-4' });
       expect(styles({ class: 'p-8' })).toBe('p-8');
     });
+
+    it('appends class with array value', () => {
+      const styles = ntv({ $base: 'base' });
+      expect(styles({ class: ['extra-a', 'extra-b'] })).toBe('base extra-a extra-b');
+    });
   });
 
-  describe('twMerge option', () => {
-    it('preserves all classes when twMerge is false', () => {
-      const styles = ntv({ $base: 'p-4' }, { twMerge: false });
-      expect(styles({ class: 'p-8' })).toBe('p-4 p-8');
+  describe('options', () => {
+    describe('twMerge', () => {
+      it('preserves all classes when twMerge is false', () => {
+        const styles = ntv({ $base: 'p-4' }, { twMerge: false });
+        expect(styles({ class: 'p-8' })).toBe('p-4 p-8');
+      });
+    });
+
+    describe('twMergeConfig', () => {
+      it('uses custom twMergeConfig for class resolution', () => {
+        const styles = ntv(
+          { $base: 'text-huge' },
+          {
+            twMergeConfig: {
+              extend: {
+                classGroups: {
+                  'font-size': [{ text: ['huge'] }],
+                },
+              },
+            },
+          },
+        );
+        expect(styles({ class: 'text-sm' })).toBe('text-sm');
+      });
+
+      it('preserves custom classes without twMergeConfig', () => {
+        const styles = ntv({ $base: 'text-huge' });
+        expect(styles({ class: 'text-sm' })).toBe('text-huge text-sm');
+      });
+    });
+  });
+
+  describe('edge cases', () => {
+    it('handles empty scheme', () => {
+      const styles = ntv({});
+      expect(styles()).toBe('');
+    });
+
+    it('handles empty scheme with class prop', () => {
+      const styles = ntv({});
+      expect(styles({ class: 'extra' })).toBe('extra');
+    });
+
+    it('handles null class values gracefully', () => {
+      const styles = ntv({ $base: 'base' });
+      expect(styles({ class: null as unknown as string })).toBe('base');
     });
   });
 
@@ -226,5 +376,19 @@ describe('createNtv', () => {
     const myNtv = createNtv();
     const styles = myNtv({ $base: 'p-4' });
     expect(styles({ class: 'p-8' })).toBe('p-8');
+  });
+
+  it('applies twMergeConfig from default options', () => {
+    const myNtv = createNtv({
+      twMergeConfig: {
+        extend: {
+          classGroups: {
+            'font-size': [{ text: ['huge'] }],
+          },
+        },
+      },
+    });
+    const styles = myNtv({ $base: 'text-huge' });
+    expect(styles({ class: 'text-sm' })).toBe('text-sm');
   });
 });
