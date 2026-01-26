@@ -127,105 +127,22 @@ button({ variant: 'primary', size: 'sm' });
 
 ### `$default` - Fallback styles
 
-Use `$default` for styles applied when no **boolean conditions** (`isXxx`/`allowsXxx`) match at that level. Variant matches do not suppress `$default`. Within variants, `$default` can also contain nested conditions:
-
-```ts
-interface ChipProps {
-  variant?: 'filled' | 'outlined';
-  isSelected?: boolean;
-}
-
-const chip = ntv<ChipProps>({
-  $base: 'inline-flex items-center rounded-full px-3 py-1',
-  variant: {
-    $default: {
-      $base: 'bg-gray-100', // Applied when variant is not specified
-      isSelected: 'bg-gray-200', // Applied when isSelected and no variant
-    },
-    filled: {
-      $default: 'bg-gray-200 text-gray-800', // Applied when isSelected is false
-      isSelected: 'bg-blue-500 text-white',
-    },
-    outlined: {
-      $default: 'border border-gray-300 text-gray-800',
-      isSelected: 'border-blue-500 text-blue-500',
-    },
-  },
-});
-
-chip();
-// => 'inline-flex items-center rounded-full px-3 py-1 bg-gray-100'
-
-chip({ isSelected: true });
-// => 'inline-flex items-center rounded-full px-3 py-1 bg-gray-200'
-
-chip({ variant: 'filled' });
-// => 'inline-flex items-center rounded-full px-3 py-1 bg-gray-200 text-gray-800'
-
-chip({ variant: 'filled', isSelected: true });
-// => 'inline-flex items-center rounded-full px-3 py-1 bg-blue-500 text-white'
-```
-
-> **Note:** Within variant conditions, `$default` is only available when the variant key is optional. Required variant keys always have a value provided, so there's no fallback case:
->
-> ```ts
-> // ❌ Error: variant is required, so $default is not allowed
-> ntv<{ variant: 'a' | 'b' }>({
->   variant: {
->     a: 'a-class',
->     b: 'b-class',
->     $default: 'default-class', // TypeScript error
->   },
-> });
->
-> // ✅ OK: variant is optional, so $default is allowed
-> ntv<{ variant?: 'a' | 'b' }>({
->   variant: {
->     a: 'a-class',
->     b: 'b-class',
->     $default: 'default-class',
->   },
-> });
-> ```
-
-### `$base` vs `$default`
-
-- **`$base`**: Always applied, regardless of whether conditions match
-- **`$default`**: Applied when no boolean conditions (`isXxx`/`allowsXxx`) match. Variant matches do not affect `$default` at the same level.
-
-```ts
-interface ButtonProps {
-  isDisabled?: boolean;
-}
-
-const button = ntv<ButtonProps>({
-  $base: 'px-4 py-2', // Always applied
-  $default: 'bg-blue-500', // Only applied when isDisabled is false
-  isDisabled: 'bg-gray-300 cursor-not-allowed',
-});
-
-button();
-// => 'px-4 py-2 bg-blue-500'
-
-button({ isDisabled: true });
-// => 'px-4 py-2 bg-gray-300 cursor-not-allowed'
-```
-
-Here's an example showing how `$default` interacts with both boolean conditions and variants:
+Use `$default` for styles applied when no **boolean conditions** (`isXxx`/`allowsXxx`) match at that level. Variant matches do not suppress `$default`:
 
 ```ts
 interface ButtonProps {
   variant?: 'primary' | 'secondary';
-  isHovered?: boolean;
+  isPressed?: boolean;
 }
 
 const button = ntv<ButtonProps>({
   $base: 'px-4 py-2 rounded',
-  $default: 'bg-gray-100',
-  isHovered: 'bg-gray-200',
+  $default: 'bg-gray-100', // Applied when no boolean conditions match
+  isPressed: 'bg-gray-300',
   variant: {
-    $default: 'text-gray-800',
+    $default: 'text-gray-800', // Applied when variant is not provided
     primary: 'text-white',
+    secondary: 'text-gray-800',
   },
 });
 
@@ -234,16 +151,16 @@ button();
 
 button({ variant: 'primary' });
 // => 'px-4 py-2 rounded bg-gray-100 text-white'
-// Note: $default (bg-gray-100) is still applied because variant matches don't suppress it
+// Note: top-level $default is still applied because variant matches don't suppress it
 
-button({ isHovered: true });
-// => 'px-4 py-2 rounded bg-gray-200 text-gray-800'
-// Note: $default is NOT applied because isHovered matches
+button({ isPressed: true });
+// => 'px-4 py-2 rounded bg-gray-300 text-gray-800'
+// Note: top-level $default is NOT applied because isPressed matches
 ```
 
 ### Variants - String-based selection
 
-Define variants as objects mapping variant values to class names:
+Define variants as objects mapping variant values to class names. Use `$default` inside a variant to define fallback styles when no value is provided:
 
 ```ts
 interface BadgeProps {
@@ -252,8 +169,9 @@ interface BadgeProps {
 }
 
 const badge = ntv<BadgeProps>({
-  $base: 'px-2 py-1 rounded text-sm',
+  $base: 'px-2 py-1 rounded',
   size: {
+    $default: 'text-sm px-2', // Applied when size is not provided
     sm: 'text-xs px-1.5',
     md: 'text-sm px-2',
     lg: 'text-base px-3',
@@ -264,6 +182,9 @@ const badge = ntv<BadgeProps>({
     warning: 'bg-yellow-100 text-yellow-800',
   },
 });
+
+badge();
+// => 'px-2 py-1 rounded text-sm px-2'
 
 badge({ size: 'lg', color: 'success' });
 // => 'py-1 rounded text-base px-3 bg-green-100 text-green-800'
@@ -283,14 +204,19 @@ interface InputProps {
 
 const input = ntv<InputProps>({
   $base: 'border rounded px-3 py-2',
+  $default: 'border-gray-300', // Applied when no boolean conditions match
   isFocused: 'ring-2 ring-blue-500 border-blue-500',
   isDisabled: 'bg-gray-100 text-gray-400 cursor-not-allowed',
   isInvalid: 'border-red-500 text-red-600',
   allowsClearing: 'pr-8',
 });
 
+input();
+// => 'border rounded px-3 py-2 border-gray-300'
+
 input({ isFocused: true });
 // => 'border rounded px-3 py-2 ring-2 ring-blue-500 border-blue-500'
+// Note: $default is NOT applied because isFocused matches
 
 input({ isDisabled: true, isInvalid: true });
 // => 'border rounded px-3 py-2 bg-gray-100 text-gray-400 cursor-not-allowed border-red-500 text-red-600'
@@ -298,14 +224,13 @@ input({ isDisabled: true, isInvalid: true });
 
 ## Nested Conditions
 
-The core feature of nestable-tailwind-variants is the ability to nest conditions inside variants.
-
-### Boolean conditions inside variants
+Conditions can be nested inside variants or boolean conditions to any depth:
 
 ```ts
 interface ChipProps {
   variant?: 'filled' | 'outlined';
   isSelected?: boolean;
+  isDisabled?: boolean;
 }
 
 const chip = ntv<ChipProps>({
@@ -314,6 +239,10 @@ const chip = ntv<ChipProps>({
     filled: {
       $default: 'bg-gray-200 text-gray-800',
       isSelected: 'bg-blue-500 text-white',
+      isDisabled: {
+        $default: 'bg-gray-100 text-gray-400',
+        isSelected: 'bg-blue-200 text-blue-400', // Selected but disabled
+      },
     },
     outlined: {
       $default: 'border border-gray-300 text-gray-800',
@@ -328,48 +257,11 @@ chip({ variant: 'filled' });
 chip({ variant: 'filled', isSelected: true });
 // => 'inline-flex items-center rounded-full px-3 py-1 bg-blue-500 text-white'
 
-chip({ variant: 'outlined', isSelected: true });
-// => 'inline-flex items-center rounded-full px-3 py-1 border-blue-500 text-blue-500'
-```
+chip({ variant: 'filled', isDisabled: true });
+// => 'inline-flex items-center rounded-full px-3 py-1 bg-gray-100 text-gray-400'
 
-### Multi-level nesting
-
-You can nest conditions to any depth:
-
-```ts
-interface ButtonProps {
-  variant?: 'primary';
-  isHovered?: boolean;
-  isPressed?: boolean;
-  isDisabled?: boolean;
-}
-
-const button = ntv<ButtonProps>({
-  $base: 'px-4 py-2 rounded font-medium transition-colors',
-  variant: {
-    primary: {
-      $default: 'bg-blue-500 text-white',
-      isHovered: 'bg-blue-600',
-      isPressed: 'bg-blue-700',
-      isDisabled: {
-        $default: 'bg-blue-300 cursor-not-allowed',
-        isHovered: 'bg-blue-300', // Prevent hover effect when disabled
-      },
-    },
-  },
-});
-
-button({ variant: 'primary' });
-// => 'px-4 py-2 rounded font-medium transition-colors bg-blue-500 text-white'
-
-button({ variant: 'primary', isHovered: true });
-// => 'px-4 py-2 rounded font-medium transition-colors bg-blue-600'
-
-button({ variant: 'primary', isDisabled: true });
-// => 'px-4 py-2 rounded font-medium transition-colors bg-blue-300 cursor-not-allowed'
-
-button({ variant: 'primary', isDisabled: true, isHovered: true });
-// => 'px-4 py-2 rounded font-medium transition-colors bg-blue-300'
+chip({ variant: 'filled', isDisabled: true, isSelected: true });
+// => 'inline-flex items-center rounded-full px-3 py-1 bg-blue-200 text-blue-400'
 ```
 
 ## Composing Styles
@@ -453,7 +345,7 @@ interface ButtonStyleProps {
 
 const button = ntv<ButtonRenderProps & ButtonStyleProps>({
   $base:
-    'inline-flex items-center justify-center rounded-md px-4 py-2 font-medium transition-colors focus:outline-none',
+    'inline-flex items-center justify-center rounded-md px-4 py-2 font-medium transition-colors',
   variant: {
     primary: {
       $default: 'bg-blue-500 text-white',
@@ -666,6 +558,8 @@ Add to `.vscode/settings.json` for [Tailwind CSS IntelliSense](https://marketpla
   "tailwindCSS.experimental.classRegex": ["ntv\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
 }
 ```
+
+> **Note:** `tailwindCSS.classFunctions` does not work with generics (e.g., `ntv<Props>({...})`). Use `experimental.classRegex` instead. See [issue #2](https://github.com/yuheiy/nestable-tailwind-variants/issues/2) and [tailwindcss-intellisense#1539](https://github.com/tailwindlabs/tailwindcss-intellisense/issues/1539) for details.
 
 ### prettier-plugin-tailwindcss
 
