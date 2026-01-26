@@ -10,9 +10,9 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  * Resolves conditions from scheme based on provided props to generate class values.
  *
  * $default behavior:
- * - If no conditions match at a level, that level's $default is applied
- * - If a variant matches, only the nested evaluation result is used
- * - When no conditions match, $defaults accumulate from each unmatched level
+ * - At each level, $default is applied unless a boolean condition (isXxx/allowsXxx) matches
+ * - Variant matches do NOT suppress $default at their level
+ * - Nested levels evaluate their own $default independently
  */
 function resolveConditions(
   { $base, $default, ...conditions }: Record<string, unknown>,
@@ -46,9 +46,6 @@ function resolveConditions(
     // Variant conditions (nested objects)
     if (isPlainObject(value)) {
       const matched = typeof propValue === 'string' && propValue in value;
-      if (matched) {
-        hasMatchedCondition = true;
-      }
       classes.push(...toClassValues(value[matched ? propValue : '$default']));
     }
   }

@@ -127,7 +127,7 @@ button({ variant: 'primary', size: 'sm' });
 
 ### `$default` - Fallback styles
 
-Use `$default` for styles applied when no conditions match at that level. Within variants, `$default` can also contain nested conditions:
+Use `$default` for styles applied when no **boolean conditions** (`isXxx`/`allowsXxx`) match at that level. Variant matches do not suppress `$default`. Within variants, `$default` can also contain nested conditions:
 
 ```ts
 interface ChipProps {
@@ -191,7 +191,7 @@ chip({ variant: 'filled', isSelected: true });
 ### `$base` vs `$default`
 
 - **`$base`**: Always applied, regardless of whether conditions match
-- **`$default`**: Only applied when no conditions match
+- **`$default`**: Applied when no boolean conditions (`isXxx`/`allowsXxx`) match. Variant matches do not affect `$default` at the same level.
 
 ```ts
 interface ButtonProps {
@@ -209,6 +209,36 @@ button();
 
 button({ isDisabled: true });
 // => 'px-4 py-2 bg-gray-300 cursor-not-allowed'
+```
+
+Here's an example showing how `$default` interacts with both boolean conditions and variants:
+
+```ts
+interface ButtonProps {
+  variant?: 'primary' | 'secondary';
+  isHovered?: boolean;
+}
+
+const button = ntv<ButtonProps>({
+  $base: 'px-4 py-2 rounded',
+  $default: 'bg-gray-100',
+  isHovered: 'bg-gray-200',
+  variant: {
+    $default: 'text-gray-800',
+    primary: 'text-white',
+  },
+});
+
+button();
+// => 'px-4 py-2 rounded bg-gray-100 text-gray-800'
+
+button({ variant: 'primary' });
+// => 'px-4 py-2 rounded bg-gray-100 text-white'
+// Note: $default (bg-gray-100) is still applied because variant matches don't suppress it
+
+button({ isHovered: true });
+// => 'px-4 py-2 rounded bg-gray-200 text-gray-800'
+// Note: $default is NOT applied because isHovered matches
 ```
 
 ### Variants - String-based selection

@@ -14,7 +14,7 @@ describe('ntv', () => {
         variant: { primary: 'primary-class' },
       });
       expect(styles()).toBe('default-class');
-      expect(styles({ variant: 'primary' })).toBe('primary-class');
+      expect(styles({ variant: 'primary' })).toBe('default-class primary-class');
     });
   });
 
@@ -66,7 +66,7 @@ describe('ntv', () => {
         },
       });
       expect(styles({ variant: 'primary' })).toBe('base primary-default');
-      expect(styles({ variant: 'primary', size: 'sm' })).toBe('base primary-sm');
+      expect(styles({ variant: 'primary', size: 'sm' })).toBe('base primary-default primary-sm');
     });
 
     it('resolves nested variant within boolean condition', () => {
@@ -81,7 +81,9 @@ describe('ntv', () => {
         },
       });
       expect(styles({ isSelected: true })).toBe('base selected-default');
-      expect(styles({ isSelected: true, variant: 'primary' })).toBe('base selected-primary');
+      expect(styles({ isSelected: true, variant: 'primary' })).toBe(
+        'base selected-default selected-primary',
+      );
     });
   });
 
@@ -101,7 +103,9 @@ describe('ntv', () => {
         },
       });
       expect(styles({ variant: 'primary' })).toBe('root-base variant-base variant-default');
-      expect(styles({ variant: 'primary', size: 'sm' })).toBe('root-base variant-base size-sm');
+      expect(styles({ variant: 'primary', size: 'sm' })).toBe(
+        'root-base variant-base variant-default size-sm',
+      );
     });
   });
 
@@ -141,8 +145,25 @@ describe('ntv', () => {
         },
       });
       expect(styles()).toBe('base root-default variant-default');
-      expect(styles({ variant: 'primary' })).toBe('base size-default');
-      expect(styles({ variant: 'primary', size: 'large' })).toBe('base size-large');
+      expect(styles({ variant: 'primary' })).toBe('base root-default size-default');
+      expect(styles({ variant: 'primary', size: 'large' })).toBe('base root-default size-large');
+    });
+  });
+
+  describe('$default with boolean and variant conditions', () => {
+    it('applies root $default when only variant matches', () => {
+      const styles = ntv<{ isHovered?: boolean; variant?: 'primary' }>({
+        $default: 'root-default',
+        isHovered: 'root-hovered',
+        variant: {
+          $default: 'variant-default',
+          primary: 'variant-primary',
+        },
+      });
+      expect(styles()).toBe('root-default variant-default');
+      expect(styles({ isHovered: true })).toBe('root-hovered variant-default');
+      expect(styles({ variant: 'primary' })).toBe('root-default variant-primary');
+      expect(styles({ isHovered: true, variant: 'primary' })).toBe('root-hovered variant-primary');
     });
   });
 
