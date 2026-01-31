@@ -1,10 +1,16 @@
+allowBuilds:
+  esbuild: true
+
 engineStrict: true
 
-minimumReleaseAge: 1440
-
-onlyBuiltDependencies:
-  - esbuild
+minimumReleaseAge: 1440 # At least a day
 
 strictDepBuilds: true
 
 strictPeerDependencies: true
+
+trustPolicy: no-downgrade
+
+trustPolicyIgnoreAfter: 10080 # 1 week
+
+verifyDepsBeforeRun: install
