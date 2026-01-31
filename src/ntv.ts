@@ -85,7 +85,7 @@ function resolveConditions(
  */
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export function ntv<TProps extends {}>(
-  scheme: Scheme<TProps>,
+  scheme: Scheme<TProps> & Record<string, unknown>,
   options?: NtvOptions,
 ): StyleFunction<TProps>;
 export function ntv(
@@ -149,7 +149,7 @@ export function ntv(
  */
 export function createNtv(defaultOptions?: NtvOptions): {
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  <TProps extends {}>(scheme: Scheme<TProps>): StyleFunction<TProps>;
+  <TProps extends {}>(scheme: Scheme<TProps> & Record<string, unknown>): StyleFunction<TProps>;
   (scheme: Scheme & Record<string, unknown>): StyleFunction<any>;
 } {
   return function configuredNtv(scheme: Scheme & Record<string, unknown>) {
