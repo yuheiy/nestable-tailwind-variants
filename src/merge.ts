@@ -23,23 +23,23 @@ import { getCachedTwMerge } from './cache.js';
 export function mergeNtvWithOptions<T extends readonly AnyStyleFunction[]>(
   ...styleFns: T
 ): (options?: NtvOptions) => StyleFunction<MergeStyleFunctionProps<T>> {
-  return function createMergedStyleFn({
+  return function withOptions({
     twMerge: usesTwMerge = true,
     twMergeConfig,
   }: NtvOptions = {}): StyleFunction<MergeStyleFunctionProps<T>> {
-    const mergeFn = usesTwMerge
+    const mergeClassNames = usesTwMerge
       ? twMergeConfig
         ? getCachedTwMerge(twMergeConfig)
         : twMerge
       : twJoin;
 
-    return function mergedStyleFn({
+    return function styleFunction({
       class: slotClass,
       className: slotClassName,
       ...props
     }: Record<string, unknown> & ClassProp = {}): string {
       const styleResults = styleFns.map((fn) => fn(props as any));
-      return mergeFn(...styleResults, slotClass, slotClassName);
+      return mergeClassNames(...styleResults, slotClass, slotClassName);
     } as unknown as StyleFunction<MergeStyleFunctionProps<T>>;
   };
 }
@@ -97,7 +97,7 @@ export function createMergeNtv(
 ): <T extends readonly AnyStyleFunction[]>(
   ...styleFns: T
 ) => StyleFunction<MergeStyleFunctionProps<T>> {
-  return function configuredMergeNtv<T extends readonly AnyStyleFunction[]>(
+  return function preconfiguredMergeNtv<T extends readonly AnyStyleFunction[]>(
     ...styleFns: T
   ): StyleFunction<MergeStyleFunctionProps<T>> {
     return mergeNtvWithOptions(...styleFns)(defaultOptions) as unknown as StyleFunction<

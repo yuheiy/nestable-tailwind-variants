@@ -45,8 +45,9 @@ function resolveConditions(
 
     // Variant conditions (nested objects)
     if (isPlainObject(value)) {
-      const matched = typeof propValue === 'string' && propValue in value;
-      classes.push(...toClassValues(value[matched ? propValue : '$default']));
+      const variantKey =
+        typeof propValue === 'string' && propValue in value ? propValue : '$default';
+      classes.push(...toClassValues(value[variantKey]));
     }
   }
 
@@ -104,19 +105,19 @@ export function ntv(
     throw new Error('The "className" property is not allowed in ntv scheme. Use "$base" instead.');
   }
 
-  const mergeFn = usesTwMerge
+  const mergeClassNames = usesTwMerge
     ? twMergeConfig
       ? getCachedTwMerge(twMergeConfig)
       : twMerge
     : twJoin;
 
-  return function styleFn({
+  return function styleFunction({
     class: slotClass,
     className: slotClassName,
     ...props
   }: Record<string, unknown> & ClassProp = {}): string {
     const resolvedClasses = resolveConditions(scheme, props);
-    return mergeFn(...resolvedClasses, slotClass, slotClassName);
+    return mergeClassNames(...resolvedClasses, slotClass, slotClassName);
   };
 }
 
@@ -152,7 +153,7 @@ export function createNtv(defaultOptions?: NtvOptions): {
   <TProps extends {}>(scheme: Scheme<TProps> & Record<string, unknown>): StyleFunction<TProps>;
   (scheme: Scheme & Record<string, unknown>): StyleFunction<any>;
 } {
-  return function configuredNtv(scheme: Scheme & Record<string, unknown>) {
+  return function preconfiguredNtv(scheme: Scheme & Record<string, unknown>) {
     return ntv(scheme, defaultOptions);
   };
 }
