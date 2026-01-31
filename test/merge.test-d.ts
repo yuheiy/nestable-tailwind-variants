@@ -50,6 +50,45 @@ describe('MergeStyleFunctionProps type', () => {
   });
 });
 
+describe('MergeStyleFunctionProps with union types', () => {
+  it('distributes merge across union members', () => {
+    type Fn1 = StyleFunction<{ isPending: boolean } | { isCurrent: boolean }>;
+    type Fn2 = StyleFunction<{ isFocused: boolean }>;
+
+    type MergedProps = MergeStyleFunctionProps<[Fn1, Fn2]>;
+
+    expectTypeOf<MergedProps>().toEqualTypeOf<
+      { isPending: boolean; isFocused: boolean } | { isCurrent: boolean; isFocused: boolean }
+    >();
+  });
+
+  it('handles multiple unions across multiple functions', () => {
+    type Fn1 = StyleFunction<{ a: boolean } | { b: boolean }>;
+    type Fn2 = StyleFunction<{ c: boolean }>;
+    type Fn3 = StyleFunction<{ d: boolean } | { e: boolean }>;
+
+    type MergedProps = MergeStyleFunctionProps<[Fn1, Fn2, Fn3]>;
+
+    expectTypeOf<MergedProps>().toEqualTypeOf<
+      | { a: boolean; c: boolean; d: boolean }
+      | { a: boolean; c: boolean; e: boolean }
+      | { b: boolean; c: boolean; d: boolean }
+      | { b: boolean; c: boolean; e: boolean }
+    >();
+  });
+
+  it('preserves optional status in distributed merge', () => {
+    type Fn1 = StyleFunction<{ required: boolean } | { other: boolean }>;
+    type Fn2 = StyleFunction<{ optional?: string }>;
+
+    type MergedProps = MergeStyleFunctionProps<[Fn1, Fn2]>;
+
+    expectTypeOf<MergedProps>().toEqualTypeOf<
+      { required: boolean; optional?: string } | { other: boolean; optional?: string }
+    >();
+  });
+});
+
 describe('createMergeNtv types', () => {
   it('returns a style function', () => {
     const myMergeNtv = createMergeNtv({ twMerge: false });
