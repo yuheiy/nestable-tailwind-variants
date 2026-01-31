@@ -1,5 +1,5 @@
 import { twJoin, twMerge } from 'tailwind-merge';
-import type { ClassProp, ClassValue, NtvOptions, Scheme, StyleFunction } from './types.js';
+import type { ClassProp, ClassValue, NtvOptions, Props, Scheme, StyleFunction } from './types.js';
 import { getCachedTwMerge } from './cache.js';
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -84,9 +84,8 @@ function resolveConditions(
  * button({ variant: 'primary', isDisabled: true }); // 'px-4 py-2 rounded bg-blue-500 text-white opacity-50 cursor-not-allowed'
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export function ntv<TProps extends {}>(
-  scheme: Scheme<TProps> & Record<string, unknown>,
+export function ntv<TProps extends Props>(
+  scheme: Scheme<TProps>,
   options?: NtvOptions,
 ): StyleFunction<TProps>;
 export function ntv(
@@ -149,8 +148,7 @@ export function ntv(
  * ```
  */
 export function createNtv(defaultOptions?: NtvOptions): {
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  <TProps extends {}>(scheme: Scheme<TProps> & Record<string, unknown>): StyleFunction<TProps>;
+  <TProps extends Props>(scheme: Scheme<TProps>): StyleFunction<TProps>;
   (scheme: Scheme & Record<string, unknown>): StyleFunction<any>;
 } {
   return function preconfiguredNtv(scheme: Scheme & Record<string, unknown>) {

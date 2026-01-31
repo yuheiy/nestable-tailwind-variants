@@ -63,6 +63,30 @@ describe('createNtv types', () => {
   });
 });
 
+describe('scheme validation', () => {
+  it('rejects string as scheme for ntv', () => {
+    // @ts-expect-error - string is not allowed as scheme
+    ntv('');
+  });
+
+  it('rejects array as scheme for ntv', () => {
+    // @ts-expect-error - array is not allowed as scheme
+    ntv([]);
+  });
+
+  it('rejects string as scheme for createNtv', () => {
+    const myNtv = createNtv();
+    // @ts-expect-error - string is not allowed as scheme
+    myNtv('');
+  });
+
+  it('rejects array as scheme for createNtv', () => {
+    const myNtv = createNtv();
+    // @ts-expect-error - array is not allowed as scheme
+    myNtv([]);
+  });
+});
+
 describe('union type props', () => {
   it('allows keys from all union members in scheme', () => {
     // Union types create exclusive props - can use either isPending OR isCurrent, but not both
