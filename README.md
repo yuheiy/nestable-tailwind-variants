@@ -555,7 +555,9 @@ Add to `.vscode/settings.json` for [Tailwind CSS IntelliSense](https://marketpla
 
 ```json
 {
-  "tailwindCSS.experimental.classRegex": ["ntv\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
+  "tailwindCSS.experimental.classRegex": [
+    ["ntv(?:<[\\s\\S]*?>)?\\s*\\(\\s*\\{([\\s\\S]*?)\\}\\s*\\)", "[\"'`]([^\"'`]*)[\"'`]"]
+  ]
 }
 ```
 
