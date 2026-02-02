@@ -1,6 +1,6 @@
 {
   "name": "nestable-tailwind-variants",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "Tailwind CSS variant library with nestable conditions for compound styling instead of flat compoundVariants.",
   "homepage": "https://github.com/yuheiy/nestable-tailwind-variants#readme",
   "bugs": {
