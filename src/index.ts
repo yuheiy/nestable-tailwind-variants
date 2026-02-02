@@ -10,4 +10,5 @@ export type {
   Scheme,
   StyleFunction,
   TwMergeConfig,
+  ValidateProps,
 } from './types.js';
