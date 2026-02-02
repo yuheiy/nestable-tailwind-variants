@@ -1,5 +1,13 @@
 import { twJoin, twMerge } from 'tailwind-merge';
-import type { ClassProp, ClassValue, NtvOptions, Props, Scheme, StyleFunction } from './types.js';
+import type {
+  ClassProp,
+  ClassValue,
+  NtvOptions,
+  Props,
+  Scheme,
+  StyleFunction,
+  ValidateProps,
+} from './types.js';
 import { getCachedTwMerge } from './cache.js';
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -15,46 +23,53 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  * - Nested levels evaluate their own $default independently
  */
 function resolveConditions(
-  { $base, $default, ...conditions }: Record<string, unknown>,
+  scheme: Record<string, unknown>,
   props: Record<string, unknown>,
 ): ClassValue[] {
+  const { $base, $default, ...conditions } = scheme;
   const classes: ClassValue[] = [];
-  let hasMatchedCondition = false;
+  let hasMatchedBooleanCondition = false;
 
   function toClassValues(value: unknown): ClassValue[] {
-    return isPlainObject(value) ? resolveConditions(value, props) : [value as ClassValue];
+    if (isPlainObject(value)) {
+      return resolveConditions(value, props);
+    }
+    return [value as ClassValue];
   }
 
   for (const [key, value] of Object.entries(conditions)) {
     const propValue = props[key];
 
+    // Validate reserved values
     if (propValue === '$default') {
       throw new Error(
         `"$default" is reserved for defining fallback styles and cannot be used as a value for "${key}".`,
       );
     }
 
-    // Boolean conditions (isXxx or allowsXxx)
-    if (/^is[A-Z]/.test(key) || /^allows[A-Z]/.test(key)) {
+    // Handle boolean conditions (isXxx or allowsXxx patterns)
+    if (/^(is|allows)[A-Z]/.test(key)) {
       if (propValue) {
-        hasMatchedCondition = true;
+        hasMatchedBooleanCondition = true;
         classes.push(...toClassValues(value));
       }
       continue;
     }
 
-    // Variant conditions (nested objects)
+    // Handle variant conditions (nested objects with variant mapping)
     if (isPlainObject(value)) {
-      const variantKey =
+      const selectedVariant =
         typeof propValue === 'string' && propValue in value ? propValue : '$default';
-      classes.push(...toClassValues(value[variantKey]));
+      classes.push(...toClassValues(value[selectedVariant]));
     }
   }
 
-  if (!hasMatchedCondition) {
+  // Apply $default if no boolean conditions matched
+  if (!hasMatchedBooleanCondition) {
     classes.unshift($default as ClassValue);
   }
 
+  // Always apply $base first
   classes.unshift($base as ClassValue);
 
   return classes;
@@ -85,25 +100,24 @@ function resolveConditions(
  * ```
  */
 export function ntv<TProps extends Props>(
-  scheme: Scheme<TProps>,
+  scheme: ValidateProps<TProps> extends TProps ? Scheme<TProps> : ValidateProps<TProps>,
   options?: NtvOptions,
 ): StyleFunction<TProps>;
 export function ntv(
   scheme: Scheme & Record<string, unknown>,
   options?: NtvOptions,
 ): StyleFunction<any>;
-export function ntv(
-  scheme: Scheme,
-  { twMerge: usesTwMerge = true, twMergeConfig }: NtvOptions = {},
-): StyleFunction<any> {
+export function ntv(scheme: Scheme, options: NtvOptions = {}): StyleFunction<any> {
+  // Validate that reserved properties are not used
   if ('class' in scheme) {
     throw new Error('The "class" property is not allowed in ntv scheme. Use "$base" instead.');
   }
-
   if ('className' in scheme) {
     throw new Error('The "className" property is not allowed in ntv scheme. Use "$base" instead.');
   }
 
+  // Determine the class merging strategy
+  const { twMerge: usesTwMerge = true, twMergeConfig } = options;
   const mergeClassNames = usesTwMerge
     ? twMergeConfig
       ? getCachedTwMerge(twMergeConfig)
@@ -148,10 +162,12 @@ export function ntv(
  * ```
  */
 export function createNtv(defaultOptions?: NtvOptions): {
-  <TProps extends Props>(scheme: Scheme<TProps>): StyleFunction<TProps>;
+  <TProps extends Props>(
+    scheme: ValidateProps<TProps> extends TProps ? Scheme<TProps> : ValidateProps<TProps>,
+  ): StyleFunction<TProps>;
   (scheme: Scheme & Record<string, unknown>): StyleFunction<any>;
 } {
-  return function preconfiguredNtv(scheme: Scheme & Record<string, unknown>) {
+  return function ntvWithDefaults(scheme: Scheme & Record<string, unknown>) {
     return ntv(scheme, defaultOptions);
   };
 }

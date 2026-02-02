@@ -87,6 +87,27 @@ describe('scheme validation', () => {
   });
 });
 
+describe('type parameter constraints', () => {
+  it('accepts interfaces and type aliases', () => {
+    interface ButtonProps {
+      variant?: 'primary' | 'secondary';
+    }
+    const button = ntv<ButtonProps>({
+      variant: { primary: 'bg-blue-500', secondary: 'bg-gray-500' },
+    });
+
+    assertType(button({ variant: 'primary' }));
+  });
+
+  it('rejects props with non-boolean or non-string values', () => {
+    // @ts-expect-error - number is not a valid prop value
+    ntv<{ count: number }>({});
+
+    // @ts-expect-error - object is not a valid prop value
+    ntv<{ data: { nested: string } }>({});
+  });
+});
+
 describe('union type props', () => {
   it('allows keys from all union members in scheme', () => {
     // Union types create exclusive props - can use either isPending OR isCurrent, but not both

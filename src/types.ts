@@ -3,32 +3,45 @@ import type { ClassNameValue as ClassValue, extendTailwindMerge } from 'tailwind
 export type { ClassValue };
 
 // ============================================================================
-// Primitive Types
+// Base Types
 // ============================================================================
 
-export type PropValue = boolean | string;
-export type Props = Record<string, PropValue | undefined>;
+// Flexible props type that accepts any object including interfaces
+export type Props = Record<string, any>;
 
 export type ClassProp =
   | { class?: ClassValue; className?: never }
   | { class?: never; className?: ClassValue };
 
 // ============================================================================
-// Internal Utilities
+// Type Utilities
 // ============================================================================
 
+// Flattens an intersection type for better readability in IntelliSense
 type Flatten<T> = { [K in keyof T]: T[K] };
 
+// Gets keys that are required (not optional) in type T
 type RequiredKeys<T> = {
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  [K in keyof T]-?: {} extends Pick<T, K> ? never : K;
+  [K in keyof T]-?: undefined extends T[K] ? never : K;
 }[keyof T];
 
+// Gets keys that are optional in type T
 type OptionalKeys<T> = Exclude<keyof T, RequiredKeys<T>>;
 
-// Union type utilities
+// Gets all keys from a union type (distributive)
 type KeysOfUnion<T> = T extends unknown ? keyof T : never;
 
+/**
+ * Checks if a key is required in at least one member of a union type.
+ * Returns `true` if the key is required in any member, `never` otherwise.
+ *
+ * @example
+ * ```ts
+ * // Usage: `true extends IsRequiredInAny<T, K> ? ... : ...`
+ * // When K is required in any union member, the result includes `true`,
+ * // so `true extends (true | never)` evaluates to true.
+ * ```
+ */
 type IsRequiredInAny<T, K extends PropertyKey> = T extends unknown
   ? K extends keyof T
     ? K extends RequiredKeys<T>
@@ -37,6 +50,7 @@ type IsRequiredInAny<T, K extends PropertyKey> = T extends unknown
     : never
   : never;
 
+// Gets the value type for a key across all members of a union type
 type ValueFromUnion<T, K extends PropertyKey> = T extends unknown
   ? K extends keyof T
     ? Exclude<T[K], undefined>
@@ -44,10 +58,24 @@ type ValueFromUnion<T, K extends PropertyKey> = T extends unknown
   : never;
 
 // ============================================================================
+// Props Validation
+// ============================================================================
+
+// Finds keys with invalid prop values (not boolean or string)
+type InvalidPropKey<T> = {
+  [K in keyof T]: NonNullable<T[K]> extends boolean | string ? never : K;
+}[keyof T];
+
+// Validates that all prop values are boolean or string
+export type ValidateProps<T, TInvalidKey = InvalidPropKey<T>> = [TInvalidKey] extends [never]
+  ? T
+  : `Error: Property '${TInvalidKey & string}' must be boolean or string`;
+
+// ============================================================================
 // Scheme Types
 // ============================================================================
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+// A nested scheme that can contain conditions and nested schemes
 type NestedScheme<TProps extends Props = {}> = {
   $base?: ClassValue;
   $default?: ClassValue | NestedScheme<TProps>;
@@ -75,6 +103,7 @@ type PropConditions<TProps extends Props> = {
   [K in KeysOfUnion<TProps> & string]?: GetPropConditionValue<TProps, K>;
 };
 
+// The root scheme type for defining style variants
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type Scheme<TProps extends Props = {}> = {
   $base?: ClassValue;
@@ -85,6 +114,7 @@ export type Scheme<TProps extends Props = {}> = {
 // StyleFunction Types
 // ============================================================================
 
+// Normalizes props by separating required and optional keys
 type NormalizeProps<T, TOriginal = T> = T extends unknown
   ? Flatten<
       { [K in RequiredKeys<T>]: T[K] } & { [K in OptionalKeys<T>]?: T[K] } & {
@@ -93,16 +123,10 @@ type NormalizeProps<T, TOriginal = T> = T extends unknown
     >
   : never;
 
-/**
- * Checks if a props type has at least one required key.
- */
+// Checks if a props type has at least one required key
 type HasRequiredKey<T> = true extends IsRequiredInAny<T, KeysOfUnion<T>> ? true : false;
 
-/**
- * Function signature for style functions.
- * If the props have no required keys, the props parameter is optional.
- * Otherwise, the props parameter is required.
- */
+// Function signature that makes props parameter optional when all props are optional
 type StyleFunctionSignature<TProps> =
   HasRequiredKey<TProps> extends false
     ? (props?: NormalizeProps<TProps> & ClassProp) => string
@@ -116,13 +140,14 @@ export type StyleFunction<TProps = Props> = StyleFunctionSignature<TProps> & {
   readonly __ntvProps?: TProps;
 };
 
+// A style function with any props type
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyStyleFunction = ((...args: any[]) => string) & {
   readonly __ntvProps?: unknown;
 };
 
 // ============================================================================
-// Merge Utilities
+// Props Merging
 // ============================================================================
 
 /**
@@ -140,8 +165,6 @@ type MergeProps<T> = Flatten<
 
 /**
  * Applies MergeProps distributively across all combinations of two union types.
- * This ensures that each combination of union members is properly merged.
- *
  * Example: MergeTwoUnions<A | B, C | D> = MergeProps<A | C> | MergeProps<A | D> | MergeProps<B | C> | MergeProps<B | D>
  */
 type MergeTwoUnions<TFirst, TSecond> = TFirst extends unknown
@@ -152,10 +175,7 @@ type MergeTwoUnions<TFirst, TSecond> = TFirst extends unknown
 
 /**
  * Recursively merges a tuple of props types, applying distributive merge at each step.
- * This handles complex cases where multiple style functions with union types are merged.
- *
- * Example: MergeAllProps<[A | B, C, D | E]> produces all combinations:
- *   MergeProps<A | C | D> | MergeProps<A | C | E> | MergeProps<B | C | D> | MergeProps<B | C | E>
+ * Example: MergeAllProps<[A | B, C, D | E]> produces all combinations.
  */
 type MergeAllProps<TTuple extends readonly unknown[]> = TTuple extends readonly []
   ? unknown
@@ -165,10 +185,7 @@ type MergeAllProps<TTuple extends readonly unknown[]> = TTuple extends readonly 
       ? MergeAllProps<[MergeTwoUnions<TFirst, TSecond>, ...TRest]>
       : unknown;
 
-/**
- * Extracts the props type from a style function.
- * Style functions store their props type in the __ntvProps property.
- */
+// Extracts the props type from a style function's __ntvProps property
 type ExtractStyleFunctionProps<T> = T extends { readonly __ntvProps?: infer P }
   ? NonNullable<P>
   : never;

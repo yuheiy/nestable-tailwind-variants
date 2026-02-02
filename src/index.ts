@@ -7,7 +7,6 @@ export type {
   MergeStyleFunctionProps,
   NtvOptions,
   Props,
-  PropValue,
   Scheme,
   StyleFunction,
   TwMergeConfig,

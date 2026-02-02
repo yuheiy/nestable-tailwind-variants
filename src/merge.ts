@@ -23,10 +23,9 @@ import { getCachedTwMerge } from './cache.js';
 export function mergeNtvWithOptions<T extends readonly AnyStyleFunction[]>(
   ...styleFns: T
 ): (options?: NtvOptions) => StyleFunction<MergeStyleFunctionProps<T>> {
-  return function withOptions({
-    twMerge: usesTwMerge = true,
-    twMergeConfig,
-  }: NtvOptions = {}): StyleFunction<MergeStyleFunctionProps<T>> {
+  return function withOptions(options: NtvOptions = {}): StyleFunction<MergeStyleFunctionProps<T>> {
+    // Determine the class merging strategy
+    const { twMerge: usesTwMerge = true, twMergeConfig } = options;
     const mergeClassNames = usesTwMerge
       ? twMergeConfig
         ? getCachedTwMerge(twMergeConfig)
@@ -38,8 +37,8 @@ export function mergeNtvWithOptions<T extends readonly AnyStyleFunction[]>(
       className: slotClassName,
       ...props
     }: Record<string, unknown> & ClassProp = {}): string {
-      const styleResults = styleFns.map((fn) => fn(props as any));
-      return mergeClassNames(...styleResults, slotClass, slotClassName);
+      const resolvedClasses = styleFns.map((fn) => fn(props as any));
+      return mergeClassNames(...resolvedClasses, slotClass, slotClassName);
     } as unknown as StyleFunction<MergeStyleFunctionProps<T>>;
   };
 }
@@ -97,7 +96,7 @@ export function createMergeNtv(
 ): <T extends readonly AnyStyleFunction[]>(
   ...styleFns: T
 ) => StyleFunction<MergeStyleFunctionProps<T>> {
-  return function preconfiguredMergeNtv<T extends readonly AnyStyleFunction[]>(
+  return function mergeNtvWithDefaults<T extends readonly AnyStyleFunction[]>(
     ...styleFns: T
   ): StyleFunction<MergeStyleFunctionProps<T>> {
     return mergeNtvWithOptions(...styleFns)(defaultOptions) as unknown as StyleFunction<
