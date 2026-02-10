@@ -8,10 +8,13 @@
 # 2. Typecheck
 pnpm run typecheck
 
-# 3. Run tests
+# 3. Lint
+pnpm run lint
+
+# 4. Run tests
 pnpm run test
 
-# 4. Detect dead code and types
+# 5. Detect dead code and types
 pnpm run knip
 ```
 
