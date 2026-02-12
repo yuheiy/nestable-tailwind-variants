@@ -49,7 +49,7 @@
   },
   "lint-staged": {
     "*": "oxfmt --no-error-on-unmatched-pattern",
-    "*.{js,jsx,ts,tsx,mjs,cjs}": "node --run lint"
+    "*.{js,jsx,ts,tsx,mjs,cjs}": "oxlint"
   },
   "devEngines": {
     "runtime": {
