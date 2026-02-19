@@ -579,13 +579,23 @@ Add to your Prettier config for [prettier-plugin-tailwindcss](https://github.com
 Add to your ESLint config for [eslint-plugin-better-tailwindcss](https://github.com/schoero/eslint-plugin-better-tailwindcss) linting:
 
 ```js
-import { getDefaultCallees } from 'eslint-plugin-better-tailwindcss/defaults';
+import betterTailwindcss from 'eslint-plugin-better-tailwindcss';
+import { getDefaultSelectors } from 'eslint-plugin-better-tailwindcss/defaults';
+import { SelectorKind } from 'eslint-plugin-better-tailwindcss/types';
 
 export default [
   {
+    extends: [betterTailwindcss.configs.recommended],
     settings: {
       'better-tailwindcss': {
-        callees: [...getDefaultCallees(), ['ntv', [{ match: 'objectValues' }]]],
+        selectors: [
+          ...getDefaultSelectors(),
+          {
+            kind: SelectorKind.Callee,
+            name: '^ntv$',
+            match: [{ type: 'objectValues' }],
+          },
+        ],
       },
     },
   },
