@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { createMergeNtv, mergeNtv, mergeNtvWithOptions, ntv } from '../src/index.js';
 
 describe('mergeNtv', () => {

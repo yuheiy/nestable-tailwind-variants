@@ -1,4 +1,5 @@
 import { assertType, describe, expectTypeOf, it } from 'vitest';
+
 import { createNtv, ntv } from '../src/index.js';
 
 describe('ntv types', () => {

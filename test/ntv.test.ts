@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { createNtv, ntv } from '../src/index.js';
 
 describe('ntv', () => {

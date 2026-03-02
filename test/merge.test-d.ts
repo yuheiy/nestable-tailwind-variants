@@ -1,6 +1,7 @@
 import { assertType, describe, expectTypeOf, it } from 'vitest';
-import type { MergeStyleFunctionProps, StyleFunction } from '../src/types.js';
+
 import { createMergeNtv, mergeNtv, ntv } from '../src/index.js';
+import type { MergeStyleFunctionProps, StyleFunction } from '../src/types.js';
 
 describe('mergeNtv types', () => {
   it('keeps key required if required in any merged function', () => {

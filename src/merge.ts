@@ -1,4 +1,6 @@
 import { twJoin, twMerge } from 'tailwind-merge';
+
+import { getCachedTwMerge } from './cache.js';
 import type {
   AnyStyleFunction,
   ClassProp,
@@ -6,7 +8,6 @@ import type {
   NtvOptions,
   StyleFunction,
 } from './types.js';
-import { getCachedTwMerge } from './cache.js';
 
 /**
  * Create a merged style function with custom options (curried version).

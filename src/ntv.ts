@@ -1,4 +1,6 @@
 import { twJoin, twMerge } from 'tailwind-merge';
+
+import { getCachedTwMerge } from './cache.js';
 import type {
   ClassProp,
   ClassValue,
@@ -8,7 +10,6 @@ import type {
   StyleFunction,
   ValidateProps,
 } from './types.js';
-import { getCachedTwMerge } from './cache.js';
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);

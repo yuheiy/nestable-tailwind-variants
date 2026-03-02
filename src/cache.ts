@@ -1,4 +1,5 @@
 import { extendTailwindMerge } from 'tailwind-merge';
+
 import type { TwMergeConfig } from './types.js';
 
 type TwMergeFn = ReturnType<typeof extendTailwindMerge>;
