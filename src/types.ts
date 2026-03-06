@@ -44,13 +44,7 @@ type ValueFromUnion<T, K extends PropertyKey> = T extends unknown
 // Props Validation
 // ============================================================================
 
-type InvalidPropKey<T> = {
-  [K in keyof T]: NonNullable<T[K]> extends boolean | string ? never : K;
-}[keyof T];
-
-export type ValidateProps<T, TInvalidKey = InvalidPropKey<T>> = [TInvalidKey] extends [never]
-  ? T
-  : `Error: Property '${TInvalidKey & string}' must be boolean or string`;
+export type ValidateProps<T> = T;
 
 // ============================================================================
 // Scheme Types
@@ -106,8 +100,12 @@ type StyleFunctionSignature<TProps> =
     ? (props?: NormalizeProps<TProps> & ClassProp) => string
     : (props: NormalizeProps<TProps> & ClassProp) => string;
 
+type FilterStyleProps<T> = T extends unknown
+  ? { [K in keyof T as NonNullable<T[K]> extends boolean | string ? K : never]: T[K] }
+  : never;
+
 export type StyleFunction<TProps = Props> = StyleFunctionSignature<TProps> & {
-  readonly __ntvProps?: TProps;
+  readonly __ntvProps?: FilterStyleProps<TProps>;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

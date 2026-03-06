@@ -100,12 +100,16 @@ describe('type parameter constraints', () => {
     assertType(button({ variant: 'primary' }));
   });
 
-  it('rejects props with non-boolean or non-string values', () => {
-    // @ts-expect-error - number is not a valid prop value
-    ntv<{ count: number }>({});
+  it('accepts props with non-boolean or non-string values', () => {
+    const styles = ntv<{ variant?: 'primary'; count: number }>({
+      variant: { primary: 'bg-blue-500' },
+    });
 
-    // @ts-expect-error - object is not a valid prop value
-    ntv<{ data: { nested: string } }>({});
+    assertType(styles({ count: 42 }));
+    assertType(styles({ variant: 'primary', count: 42 }));
+
+    // @ts-expect-error - count is required
+    styles({ variant: 'primary' });
   });
 });
 
