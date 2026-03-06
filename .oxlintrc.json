@@ -3,8 +3,11 @@
   "plugins": null,
   "categories": {
     "correctness": "error",
-    "suspicious": "warn",
     "perf": "warn"
+  },
+  "options": {
+    "typeAware": true,
+    "typeCheck": true
   },
   "rules": {},
   "settings": {

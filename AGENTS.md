@@ -1,50 +1,18 @@
-# Development Workflow
+# AGENTS.md
+
+## Commands
 
 **Always use `pnpm`, not `npm`**.
 
-```sh
-# 1. Make changes
-
-# 2. Typecheck
-pnpm run typecheck
-
-# 3. Lint
-pnpm run lint
-
-# 4. Run tests
-pnpm run test
-
-# 5. Detect dead code and types
-pnpm run knip
+```shell
+pnpm install          # Install dependencies
+pnpm run build        # Clean dist/ and compile with tsc
+pnpm run test         # Run all tests (vitest, single-run)
+pnpm run lint         # Lint and typecheck with oxlint
+pnpm run lint:fix     # Lint and auto-fix
+pnpm run format       # Format with oxfmt
+pnpm run format:check # Check formatting
+pnpm run knip         # Check for unused dependencies/exports
 ```
 
-# Commit Message Guidelines
-
-This project follows Conventional Commits.
-
-## Rules
-
-1. All messages MUST be in English
-2. Use imperative mood ("add" not "added")
-3. **IMPORTANT**: Subject appears directly in CHANGELOG - be clear and specific
-
-## Types
-
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation only
-- `refactor`: Code change that neither fixes a bug nor adds a feature
-- `perf`: Performance improvement
-- `test`: Test changes
-- `chore`: Maintenance (dependencies, build config)
-- `ci`: CI/CD changes
-
-## Breaking Changes
-
-Indicate with `!` and `BREAKING CHANGE:` in footer:
-
-```
-refactor!: remove mergeNtvWithOptions in favor of mergeNtv options parameter
-
-BREAKING CHANGE: mergeNtvWithOptions has been removed. Pass options directly to mergeNtv as the last argument instead.
-```
+There is no single-test filter in the scripts — use `pnpm vitest --run test/ntv.test.ts` or `pnpm vitest --run -t "test name"` to run specific tests.
