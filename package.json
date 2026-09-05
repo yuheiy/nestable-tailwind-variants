@@ -28,7 +28,7 @@
     "fmt": "oxfmt",
     "lint": "oxlint",
     "knip": "knip",
-    "release": "bumpp -r",
+    "release": "bumpp",
     "prepare": "git config --local core.hooksPath .githooks",
     "prepublishOnly": "node --run build"
   },
