@@ -225,6 +225,69 @@ heading({ class: 'text-sm' });
 // => 'text-sm'
 ```
 
+## Tooling
+
+These examples assume the instance returned by `createNtv` is named `ntv`. Adjust the function names if you use a different name.
+
+### Tailwind CSS IntelliSense
+
+Add this configuration to `.vscode/settings.json` for [Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss) class autocomplete:
+
+```json
+{
+  "tailwindCSS.experimental.classRegex": [
+    ["\\bntv(?:<[\\s\\S]*?>)?\\s*\\(\\s*\\{([\\s\\S]*?)\\}\\s*,?\\s*\\)", "[\"'`]([^\"'`]*)[\"'`]"],
+    "\\b(?:class|className)\\s*:\\s*[\"'`]([^\"'`]*)[\"'`]"
+  ]
+}
+```
+
+Use `experimental.classRegex` for calls with type arguments, such as `ntv<ButtonProps>({...})`. `tailwindCSS.classFunctions` does not currently recognize these calls. See [the upstream issue](https://github.com/tailwindlabs/tailwindcss-intellisense/issues/1539).
+
+### prettier-plugin-tailwindcss
+
+Add `ntv` to `tailwindFunctions` in your Prettier configuration to sort classes with [prettier-plugin-tailwindcss](https://github.com/tailwindlabs/prettier-plugin-tailwindcss):
+
+```json
+{
+  "plugins": ["prettier-plugin-tailwindcss"],
+  "tailwindFunctions": ["ntv"]
+}
+```
+
+For Tailwind CSS v4, also set `tailwindStylesheet` to your CSS entry point, relative to the Prettier configuration file.
+
+### eslint-plugin-better-tailwindcss
+
+Add a selector for `ntv` to lint classes in nested conditions with [eslint-plugin-better-tailwindcss](https://github.com/schoero/eslint-plugin-better-tailwindcss). Keep your existing TypeScript parser configuration.
+
+```js
+import { defineConfig } from 'eslint/config';
+import betterTailwindcss from 'eslint-plugin-better-tailwindcss';
+import { getDefaultSelectors } from 'eslint-plugin-better-tailwindcss/defaults';
+import { MatcherType, SelectorKind } from 'eslint-plugin-better-tailwindcss/types';
+
+export default defineConfig([
+  {
+    extends: [betterTailwindcss.configs.recommended],
+    settings: {
+      'better-tailwindcss': {
+        selectors: [
+          ...getDefaultSelectors(),
+          {
+            kind: SelectorKind.Callee,
+            name: '^ntv$',
+            match: [{ type: MatcherType.ObjectValue }],
+          },
+        ],
+      },
+    },
+  },
+]);
+```
+
+For Tailwind CSS v4, also set `settings['better-tailwindcss'].entryPoint` to your CSS entry point.
+
 ## License
 
 MIT
