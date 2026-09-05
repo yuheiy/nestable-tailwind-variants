@@ -18,11 +18,14 @@ function isConditions(value: ClassValue | Conditions): value is Conditions {
 function resolve(value: ClassValue | Conditions, props: Record<string, unknown>): ClassValue {
   if (!isConditions(value)) return value;
 
-  const { $base, $default, ...conditions } = value;
+  const { $base, $default } = value;
   const classes: ClassValue[] = [];
   let matchedBoolean = false;
 
-  for (const [key, branch] of Object.entries(conditions)) {
+  for (const key of Object.keys(value)) {
+    if (key === '$base' || key === '$default') continue;
+
+    const branch = value[key];
     const selected = props[key];
     if (selected === '$default') {
       throw new Error(
