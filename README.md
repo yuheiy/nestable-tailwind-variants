@@ -175,7 +175,7 @@ button({ size: 'sm', className: 'p-8' });
 
 With `twMerge`, styles listed later take precedence. Pass `class` or `className` to override the result.
 
-Required props, including those not used as conditions, remain required after combining.
+Required props remain required after combining.
 
 ## Configure the merger
 
