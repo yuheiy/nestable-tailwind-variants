@@ -1,6 +1,6 @@
 {
   "name": "nestable-tailwind-variants",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Define Tailwind CSS variants with nested conditions.",
   "homepage": "https://github.com/yuheiy/nestable-tailwind-variants#readme",
   "bugs": {
