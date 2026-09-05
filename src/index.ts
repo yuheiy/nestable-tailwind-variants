@@ -1,14 +1,13 @@
-export { createMergeNtv, mergeNtv, mergeNtvWithOptions } from './merge.js';
-export { createNtv, ntv } from './ntv.js';
+export { createNtv } from './ntv.js';
+
 export type {
-  AnyStyleFunction,
-  ClassProp,
+  AnyStyle,
+  ClassProps,
   ClassValue,
-  MergeStyleFunctionProps,
-  NtvOptions,
-  Props,
+  CombinedProps,
+  Options,
   Scheme,
-  StyleFunction,
-  TwMergeConfig,
-  ValidateProps,
+  Style,
+  StyleArguments,
+  UntypedScheme,
 } from './types.js';

@@ -1,7 +1,7 @@
 {
   "name": "nestable-tailwind-variants",
   "version": "0.4.5",
-  "description": "Tailwind CSS variant library with nestable conditions for compound styling instead of flat compoundVariants.",
+  "description": "Define Tailwind CSS variants with nested conditions.",
   "homepage": "https://github.com/yuheiy/nestable-tailwind-variants#readme",
   "bugs": {
     "url": "https://github.com/yuheiy/nestable-tailwind-variants/issues"
@@ -13,16 +13,24 @@
     "url": "git+https://github.com/yuheiy/nestable-tailwind-variants.git"
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "type": "module",
+  "sideEffects": false,
   "exports": {
-    ".": "./dist/index.js",
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
     "build": "git clean -fx dist/ && tsc -p tsconfig.build.json",
-    "test": "vitest",
+    "test": "node --run test:unit -- --run && node --run test:declarations",
+    "test:unit": "vitest --typecheck",
+    "test:declarations": "node --run build && node test/declarations/run.mjs",
     "check": "oxfmt --check && oxlint",
     "check:fix": "oxlint --fix && oxfmt",
     "fmt": "oxfmt",
@@ -32,18 +40,17 @@
     "prepare": "git config --local core.hooksPath .githooks",
     "prepublishOnly": "node --run build"
   },
-  "dependencies": {
-    "tailwind-merge": "^3.6.0"
-  },
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.2.2",
     "bumpp": "^12.2.2",
+    "cn": "^0.2.3",
     "knip": "^6.34.0",
     "lint-staged": "^17.4.1",
     "oxfmt": "^0.66.0",
     "oxlint": "^1.81.0",
     "oxlint-tsgolint": "^7.0.2001",
+    "tailwind-merge": "^3.6.0",
     "typescript": "~7.0.2",
     "vitest": "^4.1.11"
   },
