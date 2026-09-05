@@ -287,9 +287,9 @@ heading({ class: 'text-sm' });
 
 These examples assume the instance returned by `createNtv` is named `ntv`. Adjust the function names if you use a different name, and replace `src/app.css` with your CSS entry point.
 
-### Tailwind CSS IntelliSense
+### IntelliSense for VS Code
 
-Add this configuration to `.vscode/settings.json` for [Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss) class autocomplete:
+Install the [Tailwind CSS IntelliSense extension](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss), then add this configuration to `.vscode/settings.json` to enable class autocomplete in `ntv` calls:
 
 ```json
 {
