@@ -11,7 +11,9 @@ import type {
   ValidateProps,
 } from './types.js';
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
+type Conditions = { [key: string]: ClassValue | Conditions };
+
+function isPlainObject(value: ClassValue | Conditions): value is Conditions {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
@@ -23,19 +25,16 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  * - Variant matches do NOT suppress $default at their level
  * - Nested levels evaluate their own $default independently
  */
-function resolveConditions(
-  scheme: Record<string, unknown>,
-  props: Record<string, unknown>,
-): ClassValue[] {
+function resolveConditions(scheme: Conditions, props: Record<string, unknown>): ClassValue[] {
   const { $base, $default, ...conditions } = scheme;
   const classes: ClassValue[] = [];
   let hasMatchedBooleanCondition = false;
 
-  function toClassValues(value: unknown): ClassValue[] {
+  function toClassValues(value: ClassValue | Conditions): ClassValue[] {
     if (isPlainObject(value)) {
       return resolveConditions(value, props);
     }
-    return [value as ClassValue];
+    return [value];
   }
 
   for (const [key, value] of Object.entries(conditions)) {
@@ -66,12 +65,14 @@ function resolveConditions(
   }
 
   // Apply $default if no boolean conditions matched
-  if (!hasMatchedBooleanCondition) {
-    classes.unshift($default as ClassValue);
+  if (!hasMatchedBooleanCondition && !isPlainObject($default)) {
+    classes.unshift($default);
   }
 
   // Always apply $base first
-  classes.unshift($base as ClassValue);
+  if (!isPlainObject($base)) {
+    classes.unshift($base);
+  }
 
   return classes;
 }

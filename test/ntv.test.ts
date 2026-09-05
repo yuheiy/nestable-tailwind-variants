@@ -136,8 +136,8 @@ describe('ntv', () => {
       const styles = ntv<{ variant?: 'primary' }>({
         variant: { $default: 'default', primary: 'primary' },
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(styles({ variant: undefined } as any)).toBe('default');
+      // @ts-expect-error Exercise runtime handling of explicit undefined with exactOptionalPropertyTypes.
+      expect(styles({ variant: undefined })).toBe('default');
     });
 
     it('uses array class value for variant', () => {
@@ -182,8 +182,8 @@ describe('ntv', () => {
         $base: 'base',
         isDisabled: 'disabled',
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(styles({ isDisabled: undefined } as any)).toBe('base');
+      // @ts-expect-error Exercise runtime handling of explicit undefined with exactOptionalPropertyTypes.
+      expect(styles({ isDisabled: undefined })).toBe('base');
     });
 
     it('uses array class value for boolean condition', () => {
@@ -338,7 +338,7 @@ describe('ntv', () => {
 
     it('handles null class values gracefully', () => {
       const styles = ntv({ $base: 'base' });
-      expect(styles({ class: null as unknown as string })).toBe('base');
+      expect(styles({ class: null })).toBe('base');
     });
   });
 
@@ -359,7 +359,8 @@ describe('ntv', () => {
       const styles = ntv<{ variant?: 'primary' }>({
         variant: { $default: 'default', primary: 'primary' },
       });
-      expect(() => styles({ variant: '$default' as never })).toThrow(
+      // @ts-expect-error Exercise runtime validation of a reserved variant value.
+      expect(() => styles({ variant: '$default' })).toThrow(
         '"$default" is reserved for defining fallback styles and cannot be used as a value',
       );
     });

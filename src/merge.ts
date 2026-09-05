@@ -33,14 +33,16 @@ export function mergeNtvWithOptions<T extends readonly AnyStyleFunction[]>(
         : twMerge
       : twJoin;
 
-    return function styleFunction({
+    function styleFunction({
       class: slotClass,
       className: slotClassName,
       ...props
     }: Record<string, unknown> & ClassProp = {}): string {
-      const resolvedClasses = styleFns.map((fn) => fn(props as any));
+      const resolvedClasses = styleFns.map((fn) => fn(props));
       return mergeClassNames(...resolvedClasses, slotClass, slotClassName);
-    } as unknown as StyleFunction<MergeStyleFunctionProps<T>>;
+    }
+
+    return styleFunction;
   };
 }
 
@@ -68,7 +70,7 @@ export function mergeNtvWithOptions<T extends readonly AnyStyleFunction[]>(
 export function mergeNtv<T extends readonly AnyStyleFunction[]>(
   ...styleFns: T
 ): StyleFunction<MergeStyleFunctionProps<T>> {
-  return mergeNtvWithOptions(...styleFns)() as unknown as StyleFunction<MergeStyleFunctionProps<T>>;
+  return mergeNtvWithOptions(...styleFns)();
 }
 
 /**
@@ -100,8 +102,6 @@ export function createMergeNtv(
   return function mergeNtvWithDefaults<T extends readonly AnyStyleFunction[]>(
     ...styleFns: T
   ): StyleFunction<MergeStyleFunctionProps<T>> {
-    return mergeNtvWithOptions(...styleFns)(defaultOptions) as unknown as StyleFunction<
-      MergeStyleFunctionProps<T>
-    >;
+    return mergeNtvWithOptions(...styleFns)(defaultOptions);
   };
 }
