@@ -44,7 +44,7 @@ function resolve(value: ClassValue | Conditions, props: Record<string, unknown>)
 
   return [
     isConditions($base) ? undefined : $base,
-    matchedBoolean || isConditions($default) ? undefined : $default,
+    matchedBoolean ? undefined : resolve($default, props),
     ...classes,
   ];
 }

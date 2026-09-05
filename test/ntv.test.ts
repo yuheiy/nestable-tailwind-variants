@@ -51,6 +51,45 @@ describe('nested conditions', () => {
     expect(button(props)).toBe(result);
   });
 
+  it('resolves recursive defaults with forwarded props and local boolean suppression', () => {
+    const styles = ntv<{
+      tone?: 'quiet';
+      isActive?: boolean;
+      isNested?: boolean;
+    }>({
+      $base: 'base',
+      $default: {
+        $base: 'root-default-base',
+        $default: { $base: 'root-default' },
+        tone: { quiet: 'root-default-tone' },
+        isNested: 'root-default-nested',
+      },
+      isActive: {
+        $base: 'active-base',
+        $default: {
+          $base: 'active-default-base',
+          $default: 'active-default',
+          tone: { quiet: 'active-default-tone' },
+          isNested: 'active-default-nested',
+        },
+      },
+      tone: { quiet: 'tone' },
+    });
+
+    expect(styles({ tone: 'quiet' })).toBe(
+      'base root-default-base root-default root-default-tone tone',
+    );
+    expect(styles({ tone: 'quiet', isNested: true })).toBe(
+      'base root-default-base root-default-tone root-default-nested tone',
+    );
+    expect(styles({ tone: 'quiet', isActive: true })).toBe(
+      'base active-base active-default-base active-default active-default-tone tone',
+    );
+    expect(styles({ tone: 'quiet', isActive: true, isNested: true })).toBe(
+      'base active-base active-default-base active-default-tone active-default-nested tone',
+    );
+  });
+
   it('orders base and fallback before conditions regardless of declaration positions', () => {
     const styles = ntv<{ tone?: 'a'; size?: 'sm'; isActive?: boolean }>({
       size: { sm: 'small' },
@@ -114,9 +153,16 @@ describe('nested conditions', () => {
     expect(() => ntv({ className: 'invalid' })).toThrow('The "className" property is not allowed');
   });
 
-  it('rejects the reserved runtime value at a reached nested condition', () => {
+  it('rejects reached reserved runtime values and skips suppressed defaults', () => {
     const styles = ntv({ tone: { primary: { size: { $default: 'fallback' } } } });
     expect(() => styles({ tone: 'primary', size: '$default' })).toThrow('"$default" is reserved');
     expect(styles({ size: '$default' })).toBe('');
+
+    const defaults = ntv({
+      $default: { size: { $default: 'fallback' } },
+      isActive: 'active',
+    });
+    expect(() => defaults({ size: '$default' })).toThrow('"$default" is reserved');
+    expect(defaults({ isActive: true, size: '$default' })).toBe('active');
   });
 });

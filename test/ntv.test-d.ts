@@ -120,15 +120,60 @@ describe('scheme validation', () => {
     });
   });
 
-  it('allows nested variant fallbacks and rejects object defaults belonging to a scheme', () => {
-    ntv<{ tone?: 'primary'; isActive?: boolean }>({
-      tone: { $default: { $base: 'fallback', isActive: 'active' }, primary: 'primary' },
-    });
-    ntv<{ isActive?: boolean }>({
-      isActive: {
-        // @ts-expect-error A scheme default contains classes, not another scheme.
-        $default: { $base: 'ignored' },
+  it('allows recursive defaults at every scheme level', () => {
+    const styles = ntv<{
+      tone?: 'primary';
+      size?: 'sm';
+      isActive?: boolean;
+    }>({
+      $default: {
+        $default: {
+          tone: { primary: 'chain' },
+        },
+        tone: {
+          $default: {
+            size: { sm: 'fallback' },
+          },
+          primary: {
+            $default: {
+              isActive: 'choice',
+            },
+          },
+        },
       },
+      isActive: {
+        $default: {
+          $default: 'branch',
+        },
+      },
+    });
+    styles({ tone: 'primary', size: 'sm', isActive: true });
+  });
+
+  it('validates recursive default keys and reserved fields', () => {
+    ntv<{ tone?: 'primary' }>({
+      $default: {
+        tone: {
+          // @ts-expect-error Variant names remain constrained in nested defaults.
+          secondary: 'secondary',
+        },
+      },
+    });
+    ntv<{ count?: number }>({
+      // @ts-expect-error Number props cannot define nested conditions.
+      $default: { count: { 1: 'one' } },
+    });
+    ntv<{ tone?: 'primary' }>({
+      // @ts-expect-error Nested scheme bases remain class-only.
+      $default: { $base: { invalid: true } },
+    });
+    ntv<{ tone?: 'primary' }>({
+      // @ts-expect-error Class is a call prop, not a scheme property.
+      $default: { class: 'invalid' },
+    });
+    ntv<{ tone?: 'primary' }>({
+      // @ts-expect-error className is a call prop, not a scheme property.
+      $default: { className: 'invalid' },
     });
     ntv<{ tone?: 'primary' }>({
       tone: {

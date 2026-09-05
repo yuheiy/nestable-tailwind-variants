@@ -12,12 +12,16 @@ button({ tone: 'secondary', count: 1 });
 combined({ tone: 'primary', count: 1, class: 'p-2', className: 'p-4' });
 
 ntv<{ tone?: 'primary'; isActive?: boolean }>({
-  tone: {
-    primary: {
-      isActive: {
-        tone: {
-          // @ts-expect-error Recursive schemes retain their types after declaration generation.
-          secondary: 'p-4',
+  $default: {
+    tone: {
+      $default: {
+        isActive: {
+          $default: {
+            tone: {
+              // @ts-expect-error Recursive schemes retain their types after declaration generation.
+              secondary: 'p-4',
+            },
+          },
         },
       },
     },

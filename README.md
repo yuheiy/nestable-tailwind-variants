@@ -64,20 +64,26 @@ Conditions can be nested to any depth. All matching conditions contribute classe
 
 ### Defaults and fallbacks
 
-At each level, `$base` always applies. Use `$default` for classes that apply when no boolean condition at that level matches:
+At each level, `$base` always applies. `$default` applies when no boolean condition at that level matches. It accepts classes or nested conditions:
 
 ```ts
-const panel = ntv<{ isSelected?: boolean }>({
+const panel = ntv<{ isDisabled?: boolean; isHovered?: boolean }>({
   $base: 'rounded',
-  $default: 'border',
-  isSelected: 'ring-2',
+  isDisabled: 'opacity-50',
+  $default: {
+    $base: 'bg-blue-500',
+    isHovered: 'bg-blue-600',
+  },
 });
 
 panel();
-// => 'rounded border'
+// => 'rounded bg-blue-500'
 
-panel({ isSelected: true });
-// => 'rounded ring-2'
+panel({ isHovered: true });
+// => 'rounded bg-blue-600'
+
+panel({ isDisabled: true, isHovered: true });
+// => 'rounded opacity-50'
 ```
 
 Inside a string variant map, `$default` supplies classes or nested conditions when the prop is missing or has no matching entry:
@@ -100,7 +106,7 @@ badge({ tone: 'quiet' });
 // => 'bg-gray-100'
 ```
 
-Selecting a string variant does not suppress the surrounding level’s `$default`. Each nested level evaluates its own default independently.
+Selecting a string variant does not suppress the surrounding level’s `$default`. Each nested level uses the same props and evaluates its own default independently.
 
 ## Type props
 
@@ -123,6 +129,8 @@ required();
 // @ts-expect-error Unknown variant value.
 required({ size: 'xl' });
 ```
+
+A props type can also include values such as numbers or objects. These props are accepted by calls but cannot define conditions.
 
 ## Override classes
 
@@ -167,7 +175,7 @@ button({ size: 'sm', className: 'p-8' });
 
 With `twMerge`, styles listed later take precedence. Pass `class` or `className` to override the result.
 
-Required props remain required after combining.
+Required props, including those not used as conditions, remain required after combining.
 
 ## Configure the merger
 

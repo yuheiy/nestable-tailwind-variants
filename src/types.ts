@@ -10,14 +10,12 @@ export interface Options {
 
 export type Conditions = { readonly [key: string]: ClassValue | Conditions };
 
-type Base = {
+export type UntypedScheme = {
   $base?: ClassValue;
-  $default?: ClassValue;
+  $default?: ClassValue | UntypedScheme;
   class?: never;
   className?: never;
-};
-
-export type UntypedScheme = Base & Conditions;
+} & Conditions;
 
 type Keys<T> = T extends unknown ? keyof T : never;
 
@@ -53,8 +51,16 @@ type Condition<P, K extends string, V = NonNullable<Value<P, K>>> =
       : never;
 
 export type Scheme<P> = Simplify<
-  Base & {
-    [K in Exclude<Keys<P> & string, keyof Base>]?: Condition<P, K>;
+  {
+    $base?: ClassValue;
+    $default?: ClassValue | Scheme<P>;
+    class?: never;
+    className?: never;
+  } & {
+    [K in Exclude<Keys<P> & string, '$base' | '$default' | 'class' | 'className'>]?: Condition<
+      P,
+      K
+    >;
   }
 >;
 
