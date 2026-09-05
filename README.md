@@ -392,28 +392,6 @@ export default defineConfig([
 ]);
 ```
 
-### oxlint-tailwindcss
-
-Add [oxlint-tailwindcss](https://github.com/sergioazoc/oxlint-tailwindcss) to `.oxlintrc.json` to lint JSX `class`/`className` and supported class helpers:
-
-```json
-{
-  "jsPlugins": ["oxlint-tailwindcss"],
-  "settings": {
-    "tailwindcss": {
-      "entryPoint": "src/app.css"
-    }
-  },
-  "rules": {
-    "tailwindcss/no-unknown-classes": "error",
-    "tailwindcss/no-conflicting-classes": "error",
-    "tailwindcss/enforce-sort-order": "warn"
-  }
-}
-```
-
-Classes inside `ntv` conditions are not currently supported. Adding `ntv` to `settings.tailwindcss.callees` scans object keys rather than nested class values.
-
 ## License
 
 MIT
