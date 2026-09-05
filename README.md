@@ -307,6 +307,30 @@ Add this configuration to `.vscode/settings.json` for [Tailwind CSS IntelliSense
 
 Use `experimental.classRegex` for calls with type arguments, such as `ntv<ButtonProps>({...})`. `tailwindCSS.classFunctions` does not currently recognize these calls. See [the upstream issue](https://github.com/tailwindlabs/tailwindcss-intellisense/issues/1539).
 
+### Zed
+
+Add this configuration to `.zed/settings.json` for [Zed’s Tailwind CSS support](https://zed.dev/docs/languages/tailwindcss) to recognize classes in `ntv` calls:
+
+```json
+{
+  "lsp": {
+    "tailwindcss-language-server": {
+      "settings": {
+        "experimental": {
+          "classRegex": [
+            [
+              "\\bntv(?:<[\\s\\S]*?>)?\\s*\\(\\s*\\{([\\s\\S]*?)\\}\\s*,?\\s*\\)",
+              "[\"'`]([^\"'`]*)[\"'`]"
+            ],
+            "\\b(?:class|className)\\s*:\\s*[\"'`]([^\"'`]*)[\"'`]"
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
 ### prettier-plugin-tailwindcss
 
 Add `ntv` to `tailwindFunctions` in your Prettier configuration to sort classes with [prettier-plugin-tailwindcss](https://github.com/tailwindlabs/prettier-plugin-tailwindcss):
@@ -348,6 +372,28 @@ export default defineConfig([
   },
 ]);
 ```
+
+### oxlint-tailwindcss
+
+Add [oxlint-tailwindcss](https://github.com/sergioazoc/oxlint-tailwindcss) to `.oxlintrc.json` to lint JSX `class`/`className` and supported class helpers:
+
+```json
+{
+  "jsPlugins": ["oxlint-tailwindcss"],
+  "settings": {
+    "tailwindcss": {
+      "entryPoint": "src/app.css"
+    }
+  },
+  "rules": {
+    "tailwindcss/no-unknown-classes": "error",
+    "tailwindcss/no-conflicting-classes": "error",
+    "tailwindcss/enforce-sort-order": "warn"
+  }
+}
+```
+
+Classes inside `ntv` conditions are not currently supported. Adding `ntv` to `settings.tailwindcss.callees` scans object keys rather than nested class values.
 
 ## License
 
