@@ -22,30 +22,30 @@
   },
   "scripts": {
     "build": "git clean -fx dist/ && tsc -p tsconfig.build.json",
-    "format": "oxfmt",
-    "format:check": "oxfmt --check",
-    "knip": "knip",
+    "test": "vitest",
+    "check": "oxfmt --check && oxlint",
+    "check:fix": "oxlint --fix && oxfmt",
+    "fmt": "oxfmt",
     "lint": "oxlint",
-    "lint:fix": "oxlint --fix",
-    "release": "bumpp -r",
-    "test": "vitest --run",
+    "knip": "knip",
+    "release": "bumpp",
     "prepare": "git config --local core.hooksPath .githooks",
     "prepublishOnly": "node --run build"
   },
   "dependencies": {
-    "tailwind-merge": "^3.5.0"
+    "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.4.3",
-    "@commitlint/config-conventional": "^20.4.3",
-    "bumpp": "^10.4.1",
-    "knip": "^5.85.0",
-    "lint-staged": "^16.3.2",
-    "oxfmt": "^0.36.0",
-    "oxlint": "^1.51.0",
-    "oxlint-tsgolint": "^0.16.0",
-    "typescript": "~5.9.3",
-    "vitest": "^4.0.18"
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
+    "bumpp": "^12.2.2",
+    "knip": "^6.34.0",
+    "lint-staged": "^17.4.1",
+    "oxfmt": "^0.66.0",
+    "oxlint": "^1.81.0",
+    "oxlint-tsgolint": "^7.0.2001",
+    "typescript": "~7.0.2",
+    "vitest": "^4.1.11"
   },
   "lint-staged": {
     "*": "oxfmt --no-error-on-unmatched-pattern",
@@ -54,9 +54,9 @@
   "devEngines": {
     "runtime": {
       "name": "node",
-      "version": "^24.13.0",
+      "version": "^24.20.0",
       "onFail": "download"
     }
   },
-  "packageManager": "pnpm@10.29.2"
+  "packageManager": "pnpm@12.3.2"
 }

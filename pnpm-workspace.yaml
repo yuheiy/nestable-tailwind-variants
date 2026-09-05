@@ -3,14 +3,8 @@ allowBuilds:
 
 engineStrict: true
 
-minimumReleaseAge: 1440 # At least a day
-
-strictDepBuilds: true
-
-strictPeerDependencies: true
+minimumReleaseAge: 4320 # 3 days
 
 trustPolicy: no-downgrade
 
-trustPolicyIgnoreAfter: 10080 # 1 week
-
-verifyDepsBeforeRun: install
+trustPolicyIgnoreAfter: 43200 # 30 days
