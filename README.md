@@ -287,9 +287,9 @@ heading({ class: 'text-sm' });
 
 These examples assume the instance returned by `createNtv` is named `ntv`. Adjust the function names if you use a different name, and replace `src/app.css` with your CSS entry point.
 
-### IntelliSense for VS Code
+### VS Code
 
-Install the [Tailwind CSS IntelliSense extension](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss), then add this configuration to `.vscode/settings.json` to enable class autocomplete in `ntv` calls:
+Install [Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss) and add this configuration to `.vscode/settings.json` to recognize classes in `ntv` calls:
 
 ```json
 {
@@ -337,6 +337,30 @@ Add `ntv` to `tailwindFunctions` in your Prettier configuration to sort classes 
   "tailwindFunctions": ["ntv"]
 }
 ```
+
+### eslint-plugin-tailwindcss
+
+Add `ntv` to `functions` to lint classes in nested conditions with [eslint-plugin-tailwindcss](https://github.com/francoismassart/eslint-plugin-tailwindcss). Keep your existing TypeScript parser configuration.
+
+```js
+import { defineConfig } from 'eslint/config';
+import tailwindcss from 'eslint-plugin-tailwindcss';
+
+export default defineConfig([
+  {
+    extends: [tailwindcss.configs.recommended],
+    settings: {
+      tailwindcss: {
+        cssConfigPath: './src/app.css',
+        functions: ['ntv'],
+        ignoredKeys: [],
+      },
+    },
+  },
+]);
+```
+
+The `functions` list replaces the defaults. Include any other class helpers you use.
 
 ### eslint-plugin-better-tailwindcss
 
