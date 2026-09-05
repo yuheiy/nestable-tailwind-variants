@@ -177,6 +177,64 @@ With `twMerge`, styles listed later take precedence. Pass `class` or `className`
 
 Required props remain required after combining.
 
+## Use with React Aria Components
+
+Pass [React Aria Components render props](https://react-aria.adobe.com/styling#render-props) to your styles to respond to hover, pressed, focus, and disabled states:
+
+```tsx
+import { createNtv } from 'nestable-tailwind-variants';
+import {
+  Button as RACButton,
+  composeRenderProps,
+  type ButtonProps as RACButtonProps,
+  type ButtonRenderProps,
+} from 'react-aria-components';
+import { twMerge } from 'tailwind-merge';
+
+const ntv = createNtv({ twMerge });
+
+interface ButtonStyleProps {
+  variant?: 'primary' | 'secondary';
+  size?: 'sm' | 'md' | 'lg';
+}
+
+const button = ntv<ButtonRenderProps & ButtonStyleProps>({
+  $base: 'inline-flex items-center justify-center rounded-md font-medium transition-colors',
+  variant: {
+    primary: {
+      $base: 'bg-blue-500 text-white',
+      isHovered: 'bg-blue-600',
+      isPressed: 'bg-blue-700',
+    },
+    secondary: {
+      $base: 'bg-gray-200 text-gray-800',
+      isHovered: 'bg-gray-300',
+      isPressed: 'bg-gray-400',
+    },
+  },
+  size: {
+    sm: 'h-8 px-3 text-sm',
+    md: 'h-10 px-4 text-base',
+    lg: 'h-12 px-6 text-lg',
+  },
+  isFocusVisible: 'ring-2 ring-blue-500 ring-offset-2',
+  isDisabled: 'opacity-50 cursor-not-allowed',
+});
+
+function Button({ variant = 'primary', size = 'md', ...props }: RACButtonProps & ButtonStyleProps) {
+  return (
+    <RACButton
+      {...props}
+      className={composeRenderProps(props.className, (className, renderProps) =>
+        button({ ...renderProps, variant, size, className }),
+      )}
+    />
+  );
+}
+```
+
+`composeRenderProps` preserves the caller’s `className`, whether it is a string or a function, and applies those classes as overrides.
+
 ## Configure the merger
 
 The package has no runtime dependency on a merger. Pass the merger you want to use to `createNtv`.
@@ -223,6 +281,115 @@ const heading = ntv({ $base: 'text-huge' });
 
 heading({ class: 'text-sm' });
 // => 'text-sm'
+```
+
+## Tooling
+
+These examples assume the instance returned by `createNtv` is named `ntv`. Adjust the function names if you use a different name, and replace `src/app.css` with your CSS entry point.
+
+### VS Code
+
+Install [Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss) and add this configuration to `.vscode/settings.json` to recognize classes in `ntv` calls:
+
+```json
+{
+  "tailwindCSS.experimental.classRegex": [
+    ["\\bntv(?:<[\\s\\S]*?>)?\\s*\\(\\s*\\{([\\s\\S]*?)\\}\\s*,?\\s*\\)", "[\"'`]([^\"'`]*)[\"'`]"],
+    "\\b(?:class|className)\\s*:\\s*[\"'`]([^\"'`]*)[\"'`]"
+  ]
+}
+```
+
+Use `experimental.classRegex` for calls with type arguments, such as `ntv<ButtonProps>({...})`. `tailwindCSS.classFunctions` does not currently recognize these calls. See [the upstream issue](https://github.com/tailwindlabs/tailwindcss-intellisense/issues/1539).
+
+### Zed
+
+Add this configuration to `.zed/settings.json` for [Zed’s Tailwind CSS support](https://zed.dev/docs/languages/tailwindcss) to recognize classes in `ntv` calls:
+
+```json
+{
+  "lsp": {
+    "tailwindcss-language-server": {
+      "settings": {
+        "experimental": {
+          "classRegex": [
+            [
+              "\\bntv(?:<[\\s\\S]*?>)?\\s*\\(\\s*\\{([\\s\\S]*?)\\}\\s*,?\\s*\\)",
+              "[\"'`]([^\"'`]*)[\"'`]"
+            ],
+            "\\b(?:class|className)\\s*:\\s*[\"'`]([^\"'`]*)[\"'`]"
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
+### prettier-plugin-tailwindcss
+
+Add `ntv` to `tailwindFunctions` in your Prettier configuration to sort classes with [prettier-plugin-tailwindcss](https://github.com/tailwindlabs/prettier-plugin-tailwindcss):
+
+```json
+{
+  "plugins": ["prettier-plugin-tailwindcss"],
+  "tailwindStylesheet": "./src/app.css",
+  "tailwindFunctions": ["ntv"]
+}
+```
+
+### eslint-plugin-tailwindcss
+
+Add `ntv` to `functions` to lint classes in nested conditions with [eslint-plugin-tailwindcss](https://github.com/francoismassart/eslint-plugin-tailwindcss). Keep your existing TypeScript parser configuration.
+
+```js
+import { defineConfig } from 'eslint/config';
+import tailwindcss from 'eslint-plugin-tailwindcss';
+
+export default defineConfig([
+  {
+    extends: [tailwindcss.configs.recommended],
+    settings: {
+      tailwindcss: {
+        cssConfigPath: './src/app.css',
+        functions: ['ntv'],
+        ignoredKeys: [],
+      },
+    },
+  },
+]);
+```
+
+The `functions` list replaces the defaults. Include any other class helpers you use.
+
+### eslint-plugin-better-tailwindcss
+
+Add a selector for `ntv` to lint classes in nested conditions with [eslint-plugin-better-tailwindcss](https://github.com/schoero/eslint-plugin-better-tailwindcss). Keep your existing TypeScript parser configuration.
+
+```js
+import { defineConfig } from 'eslint/config';
+import betterTailwindcss from 'eslint-plugin-better-tailwindcss';
+import { getDefaultSelectors } from 'eslint-plugin-better-tailwindcss/defaults';
+import { MatcherType, SelectorKind } from 'eslint-plugin-better-tailwindcss/types';
+
+export default defineConfig([
+  {
+    extends: [betterTailwindcss.configs.recommended],
+    settings: {
+      'better-tailwindcss': {
+        entryPoint: 'src/app.css',
+        selectors: [
+          ...getDefaultSelectors(),
+          {
+            kind: SelectorKind.Callee,
+            name: '^ntv$',
+            match: [{ type: MatcherType.ObjectValue }],
+          },
+        ],
+      },
+    },
+  },
+]);
 ```
 
 ## License
