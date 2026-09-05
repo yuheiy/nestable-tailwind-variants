@@ -221,16 +221,11 @@ const button = ntv<ButtonRenderProps & ButtonStyleProps>({
   isDisabled: 'opacity-50 cursor-not-allowed',
 });
 
-function Button({
-  variant = 'primary',
-  size = 'md',
-  className,
-  ...props
-}: RACButtonProps & ButtonStyleProps) {
+function Button({ variant = 'primary', size = 'md', ...props }: RACButtonProps & ButtonStyleProps) {
   return (
     <RACButton
       {...props}
-      className={composeRenderProps(className, (className, renderProps) =>
+      className={composeRenderProps(props.className, (className, renderProps) =>
         button({ ...renderProps, variant, size, className }),
       )}
     />
