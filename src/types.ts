@@ -1,169 +1,105 @@
-import type { ClassNameValue as ClassValue, extendTailwindMerge } from 'tailwind-merge';
+export type ClassValue = string | false | null | undefined | 0 | 0n | readonly ClassValue[];
 
-export type { ClassValue };
-
-// ============================================================================
-// Base Types
-// ============================================================================
-
-export type Props = Record<string, any>;
-
-export type ClassProp =
+export type ClassProps =
   | { class?: ClassValue; className?: never }
   | { class?: never; className?: ClassValue };
 
-// ============================================================================
-// Type Utilities
-// ============================================================================
+export interface Options {
+  twMerge: (...classes: ClassValue[]) => string;
+}
 
-type Flatten<T> = { [K in keyof T]: T[K] };
+export type Conditions = { readonly [key: string]: ClassValue | Conditions };
 
-type RequiredKeys<T> = {
-  [K in keyof T]-?: undefined extends T[K] ? never : K;
-}[keyof T];
+export type UntypedScheme = {
+  $base?: ClassValue;
+  $default?: ClassValue | UntypedScheme;
+  class?: never;
+  className?: never;
+} & Conditions;
 
-type OptionalKeys<T> = Exclude<keyof T, RequiredKeys<T>>;
+type Keys<T> = T extends unknown ? keyof T : never;
 
-type KeysOfUnion<T> = T extends unknown ? keyof T : never;
-
-type IsRequiredInAny<T, K extends PropertyKey> = T extends unknown
-  ? K extends keyof T
-    ? K extends RequiredKeys<T>
-      ? true
-      : never
-    : never
-  : never;
-
-type ValueFromUnion<T, K extends PropertyKey> = T extends unknown
+type Value<T, K extends PropertyKey> = T extends unknown
   ? K extends keyof T
     ? Exclude<T[K], undefined>
     : never
   : never;
 
-// ============================================================================
-// Props Validation
-// ============================================================================
-
-export type ValidateProps<T> = T;
-
-// ============================================================================
-// Scheme Types
-// ============================================================================
-
-type NestedScheme<TProps extends Props = {}> = {
-  $base?: ClassValue;
-  $default?: ClassValue | NestedScheme<TProps>;
-} & PropConditions<TProps>;
-
-type VariantMapping<TVariant extends string, TProps extends Props> = {
-  [V in TVariant]?: ClassValue | NestedScheme<TProps>;
-} & {
-  $default?: ClassValue | NestedScheme<TProps>;
-};
-
-type GetPropConditionValue<
-  TProps extends Props,
-  K extends PropertyKey,
-  TValue = NonNullable<ValueFromUnion<TProps, K>>,
-> = TValue extends boolean
-  ? ClassValue | NestedScheme<TProps>
-  : TValue extends string
-    ? VariantMapping<TValue, TProps>
-    : never;
-
-type PropConditions<TProps extends Props> = {
-  [K in KeysOfUnion<TProps> & string]?: GetPropConditionValue<TProps, K>;
-};
-
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export type Scheme<TProps extends Props = {}> = {
-  $base?: ClassValue;
-  $default?: ClassValue;
-} & PropConditions<TProps>;
-
-// ============================================================================
-// StyleFunction Types
-// ============================================================================
-
-type NormalizeProps<T, TOriginal = T> = T extends unknown
-  ? Flatten<
-      { [K in RequiredKeys<T>]: T[K] } & { [K in OptionalKeys<T>]?: T[K] } & {
-        [K in Exclude<KeysOfUnion<TOriginal>, keyof T>]?: never;
-      }
-    >
+type RequiredKeys<T> = T extends unknown
+  ? { [K in keyof T]-?: undefined extends T[K] ? never : K }[keyof T]
   : never;
 
-type HasRequiredKey<T> = true extends IsRequiredInAny<T, KeysOfUnion<T>> ? true : false;
+type Simplify<T> = { [K in keyof T]: T[K] };
 
-type StyleFunctionSignature<TProps> =
-  HasRequiredKey<TProps> extends false
-    ? (props?: NormalizeProps<TProps> & ClassProp) => string
-    : (props: NormalizeProps<TProps> & ClassProp) => string;
+type IsBooleanKey<K extends string> = K extends `${'is' | 'allows'}${infer First}${infer _Rest}`
+  ? First extends ''
+    ? false
+    : 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' extends `${string}${First}${string}`
+      ? true
+      : false
+  : false;
 
-type FilterStyleProps<T> = T extends unknown
-  ? { [K in keyof T as NonNullable<T[K]> extends boolean | string ? K : never]: T[K] }
-  : never;
+type Condition<P, K extends string, V = NonNullable<Value<P, K>>> =
+  IsBooleanKey<K> extends true
+    ? [V] extends [boolean]
+      ? ClassValue | Scheme<P>
+      : never
+    : [V] extends [string]
+      ? { [Choice in Extract<V, string>]?: ClassValue | Scheme<P> } & {
+          $default?: ClassValue | Scheme<P>;
+        }
+      : never;
 
-export type StyleFunction<TProps = Props> = StyleFunctionSignature<TProps> & {
-  readonly __ntvProps?: FilterStyleProps<TProps>;
-};
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyStyleFunction = ((...args: any[]) => string) & {
-  readonly __ntvProps?: unknown;
-};
-
-// ============================================================================
-// Props Merging
-// ============================================================================
-
-type MergeProps<T> = Flatten<
+export type Scheme<P> = Simplify<
   {
-    [K in KeysOfUnion<T> as true extends IsRequiredInAny<T, K> ? K : never]: ValueFromUnion<T, K>;
+    $base?: ClassValue;
+    $default?: ClassValue | Scheme<P>;
+    class?: never;
+    className?: never;
   } & {
-    [K in KeysOfUnion<T> as true extends IsRequiredInAny<T, K> ? never : K]?: ValueFromUnion<T, K>;
+    [K in Exclude<Keys<P> & string, '$base' | '$default' | 'class' | 'className'>]?: Condition<
+      P,
+      K
+    >;
   }
 >;
 
-type MergeTwoUnions<TFirst, TSecond> = TFirst extends unknown
-  ? TSecond extends unknown
-    ? MergeProps<TFirst | TSecond>
-    : never
+type Normalize<P, All = P> = P extends unknown
+  ? Simplify<
+      { [K in RequiredKeys<P>]: P[K] } & {
+        [K in Exclude<keyof P, RequiredKeys<P>>]?: P[K];
+      } & { [K in Exclude<Keys<All>, keyof P>]?: never }
+    >
   : never;
 
-type MergeAllProps<TTuple extends readonly unknown[]> = TTuple extends readonly []
-  ? unknown
-  : TTuple extends readonly [infer TOnly]
-    ? TOnly
-    : TTuple extends readonly [infer TFirst, infer TSecond, ...infer TRest]
-      ? MergeAllProps<[MergeTwoUnions<TFirst, TSecond>, ...TRest]>
-      : unknown;
+export type Style<P> = [RequiredKeys<P>] extends [never]
+  ? (props?: Normalize<P> & ClassProps) => string
+  : (props: Normalize<P> & ClassProps) => string;
 
-type ExtractStyleFunctionProps<T> = T extends { readonly __ntvProps?: infer P }
-  ? NonNullable<P>
-  : never;
+export type AnyStyle = (props: never) => string;
 
-export type MergeStyleFunctionProps<T extends readonly AnyStyleFunction[]> = MergeAllProps<{
-  [K in keyof T]: ExtractStyleFunctionProps<T[K]>;
-}>;
+export type StyleArguments<F extends readonly AnyStyle[]> = {
+  [K in keyof F]: Parameters<F[K]> extends [props?: object | undefined] ? F[K] : never;
+};
 
-// ============================================================================
-// Configuration Types
-// ============================================================================
+type WithoutClasses<P> = P extends unknown ? Omit<NonNullable<P>, 'class' | 'className'> : never;
 
-export type TwMergeConfig = Parameters<typeof extendTailwindMerge>[0];
+type StyleProps<F extends AnyStyle> =
+  Parameters<F> extends [] ? object : WithoutClasses<NonNullable<Parameters<F>[0]>>;
 
-export interface NtvOptions {
-  /**
-   * Whether to merge the class names with `tailwind-merge` library.
-   * This avoids duplicate tailwind classes. (Recommended)
-   * @see https://github.com/dcastil/tailwind-merge
-   * @default true
-   */
-  twMerge?: boolean;
-  /**
-   * The config object for `tailwind-merge` library.
-   * @see https://github.com/dcastil/tailwind-merge/blob/main/docs/configuration.md
-   */
-  twMergeConfig?: TwMergeConfig;
-}
+type Combine<T> = Simplify<
+  { [K in RequiredKeys<T>]: Value<T, K> } & {
+    [K in Exclude<Keys<T>, RequiredKeys<T>>]?: Value<T, K>;
+  }
+>;
+
+type CombinePair<A, B> = A extends unknown ? (B extends unknown ? Combine<A | B> : never) : never;
+
+export type CombinedProps<F extends readonly AnyStyle[]> = F extends readonly [
+  infer Head extends AnyStyle,
+  ...infer Tail extends AnyStyle[],
+]
+  ? CombinePair<StyleProps<Head>, CombinedProps<Tail>>
+  : number extends F['length']
+    ? Combine<StyleProps<F[number]>>
+    : object;
