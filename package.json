@@ -28,12 +28,12 @@
   },
   "scripts": {
     "build": "git clean -fx dist/ && tsc -p tsconfig.build.json",
-    "test": "node --run test:unit && node --run test:declarations",
-    "test:unit": "vitest --typecheck --run",
-    "test:declarations": "node --run build && node test/declarations/run.mjs",
     "check": "oxfmt --check && oxlint",
     "check:fix": "oxlint --fix && oxfmt",
     "knip": "knip",
+    "test": "node --run test:unit && node --run test:declarations",
+    "test:unit": "vitest --typecheck --run",
+    "test:declarations": "node --run build && node test/declarations/run.mjs",
     "release": "bumpp",
     "prepare": "git config --local core.hooksPath .githooks",
     "prepublishOnly": "node --run build"
