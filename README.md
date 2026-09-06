@@ -239,27 +239,6 @@ function Button({ variant = 'primary', size = 'md', ...props }: RACButtonProps &
 
 The package has no runtime dependency on a merger. Pass the merger you want to use to `createNtv`.
 
-### Use `cn`
-
-Install `cn` alongside this package:
-
-```bash
-npm install nestable-tailwind-variants cn
-```
-
-Pass `twMerge` to `createNtv`:
-
-```ts
-import { twMerge } from 'cn';
-import { createNtv } from 'nestable-tailwind-variants';
-
-const ntv = createNtv({ twMerge });
-const box = ntv({ $base: 'p-4' });
-
-box({ class: 'p-8' });
-// => 'p-8'
-```
-
 ### Configure custom Tailwind classes
 
 Configure the merger before passing it to `createNtv`. For example, register `text-huge` as a font-size utility:
@@ -281,6 +260,27 @@ const heading = ntv({ $base: 'text-huge' });
 
 heading({ class: 'text-sm' });
 // => 'text-sm'
+```
+
+### Use `cn`
+
+Install `cn` alongside this package:
+
+```bash
+npm install nestable-tailwind-variants cn
+```
+
+Pass `twMerge` to `createNtv`:
+
+```ts
+import { twMerge } from 'cn';
+import { createNtv } from 'nestable-tailwind-variants';
+
+const ntv = createNtv({ twMerge });
+const box = ntv({ $base: 'p-4' });
+
+box({ class: 'p-8' });
+// => 'p-8'
 ```
 
 ## Tooling
@@ -391,7 +391,3 @@ export default defineConfig([
   },
 ]);
 ```
-
-## License
-
-MIT
