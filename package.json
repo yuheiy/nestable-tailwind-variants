@@ -59,7 +59,7 @@
   "devEngines": {
     "runtime": {
       "name": "node",
-      "version": "^24.20.0",
+      "version": "22.22.1",
       "onFail": "download"
     }
   },
