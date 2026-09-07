@@ -62,16 +62,16 @@ export function createNtv({ twMerge }: Options) {
       }
     }
 
-    return ({ class: extra, className, ...props }: Record<string, unknown> & ClassProps = {}) =>
-      twMerge(resolve(scheme, props), extra, className);
+    return ({ class: class_, className, ...props }: Record<string, unknown> & ClassProps = {}) =>
+      twMerge(resolve(scheme, props), class_, className);
   }
 
   function combine<const F extends readonly AnyStyle[]>(
     ...styles: F & StyleArguments<F>
   ): Style<CombinedProps<F>>;
   function combine(...styles: ((props: Record<string, unknown>) => string)[]) {
-    return ({ class: extra, className, ...props }: Record<string, unknown> & ClassProps = {}) =>
-      twMerge(...styles.map((style) => style(props)), extra, className);
+    return ({ class: class_, className, ...props }: Record<string, unknown> & ClassProps = {}) =>
+      twMerge(...styles.map((style) => style(props)), class_, className);
   }
 
   return Object.assign(ntv, { combine });
