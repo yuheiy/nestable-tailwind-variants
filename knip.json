@@ -1,6 +1,5 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "ignoreFiles": ["test/declarations/fixtures/**"],
-  "ignoreBinaries": ["stage"],
   "ignoreDependencies": ["@commitlint/cli"]
 }
