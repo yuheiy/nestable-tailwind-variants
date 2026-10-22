@@ -16,4 +16,8 @@ export const button = ntv<{ tone: 'primary'; count: number; isActive?: boolean }
     },
   },
 });
-export const combined = ntv.combine(button, ntv({ $base: 'm-1' }));
+export const extended = ntv.extend(button, ntv({ $base: 'm-1' }))({});
+
+export const explicitExtension = ntv.extend(button)<{ size: 'sm' | 'lg' }>({
+  size: { sm: { isActive: 'font-bold' } },
+});

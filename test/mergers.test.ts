@@ -20,10 +20,10 @@ it.each(Object.entries(mergers))('resolves conflicts with %s', (_name, mergeClas
   const size = ntv<{ size?: 'lg' }>({
     size: { lg: ['p-6 text-sm', ['hover:p-2', 'hover:p-4']] },
   });
-  const combined = ntv.combine(button, size);
+  const extended = ntv.extend(button, size)({});
   expect(button()).toBe('p-2 m-1 bg-blue-500');
   expect(button({ isPressed: true, className: 'p-8' })).toBe('m-1 bg-blue-700 p-8');
-  expect(combined({ isPressed: true, size: 'lg', class: ['p-8', [false, 'text-lg']] })).toBe(
+  expect(extended({ isPressed: true, size: 'lg', class: ['p-8', [false, 'text-lg']] })).toBe(
     'm-1 bg-blue-700 hover:p-4 p-8 text-lg',
   );
 });
@@ -37,6 +37,6 @@ it('delegates custom conflict rules to the configured merger', () => {
   const normal = createNtv({ twMerge });
   const huge = ntv({ $base: 'text-huge' });
   expect(huge({ class: 'text-sm' })).toBe('text-sm');
-  expect(ntv.combine(huge, ntv({ $base: 'text-sm' }))()).toBe('text-sm');
+  expect(ntv.extend(huge, ntv({ $base: 'text-sm' }))({})()).toBe('text-sm');
   expect(normal({ $base: 'text-huge' })({ class: 'text-sm' })).toBe('text-huge text-sm');
 });
