@@ -25,3 +25,9 @@ export const extendedJsx = (
 export const optionalCallback: (state?: State) => string = ntv.extend(base)({
   $default: {/* optional-callback */},
 });
+
+export const openExtension = ntv.extend(ntv({ tone: { primary: 'base' } }))<{
+  isDisabled?: boolean;
+}>({
+  tone: { primary: {/* open-known */} },
+});

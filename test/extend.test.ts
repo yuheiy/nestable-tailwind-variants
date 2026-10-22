@@ -5,9 +5,9 @@ import { createNtv } from '../src/index.js';
 
 describe('ntv.extend', () => {
   const ntv = createNtv({ twMerge });
+  const join = createNtv({ twMerge: twJoin });
 
   it('passes non-style props to each function and appends overrides only once', () => {
-    const join = createNtv({ twMerge: twJoin });
     const inputs: object[] = [];
     const first = (props: { count: number; class?: string }) => {
       inputs.push(props);
@@ -23,7 +23,6 @@ describe('ntv.extend', () => {
   });
 
   it('supports repeated composition with independent defaults', () => {
-    const join = createNtv({ twMerge: twJoin });
     const first = join<{ isActive?: boolean }>({ $default: 'idle', isActive: 'active' });
     const styles = join.extend(
       join.extend(first, join({ $base: 'second' }))({}),
@@ -34,7 +33,6 @@ describe('ntv.extend', () => {
   });
 
   it('uses each source merger before applying the composing factory merger', () => {
-    const join = createNtv({ twMerge: twJoin });
     const first = join({ $base: 'p-2 p-4' });
     const second = ntv({ $base: 'p-6 p-8' });
     expect(join.extend(first, second)({})()).toBe('p-2 p-4 p-8');
@@ -43,14 +41,12 @@ describe('ntv.extend', () => {
   });
 
   it('handles zero and one input without duplicating the override', () => {
-    const join = createNtv({ twMerge: twJoin });
     expect(join.extend()({})()).toBe('');
     expect(join.extend()({})({ class: 'extra' })).toBe('extra');
     expect(join.extend(join({ $base: 'base' }))({})({ className: 'extra' })).toBe('base extra');
   });
 
   it('resolves base and extension defaults independently', () => {
-    const join = createNtv({ twMerge: twJoin });
     const base = join<{ isActive?: boolean; isDisabled?: boolean }>({
       $base: 'base',
       $default: 'base-idle',
