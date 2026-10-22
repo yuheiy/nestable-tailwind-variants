@@ -19,16 +19,15 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+      - uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
         with:
           cache: true
-          require-lockfile: true
 
       - name: Generate GitHub Changelog
-        run: pnpm dlx changelogithub
+        run: vp dlx changelogithub
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Stage package on npm
-        run: pnpm stage publish --access public --no-git-checks
+        run: vp pm stage publish --access public -- --no-git-checks
