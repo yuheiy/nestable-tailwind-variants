@@ -1,6 +1,6 @@
 import { twMerge as cnMerge } from 'cn';
 import { extendTailwindMerge, twMerge } from 'tailwind-merge';
-import { expect, it } from 'vitest';
+import { expect, it } from 'vite-plus/test';
 
 import { createNtv } from '../src/index.js';
 
