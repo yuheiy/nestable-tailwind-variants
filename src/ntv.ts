@@ -1,13 +1,13 @@
 import type {
   AnyStyle,
+  BaseProps,
+  CheckedBases,
   ClassProps,
   ClassValue,
   Conditions,
   Extension,
-  ExtensionProps,
   Ntv,
   Options,
-  StyleArguments,
 } from './types.js';
 
 function isConditions(value: ClassValue | Conditions): value is Conditions {
@@ -66,16 +66,12 @@ export function createNtv({ twMerge }: Options): Ntv {
       twMerge(...bases.map((base) => base(props)), resolve(scheme, props), class_, className);
   }
 
-  function ntv(scheme: Conditions) {
-    return construct(scheme);
-  }
-
   function extend<const F extends readonly AnyStyle[]>(
-    ...bases: F & NoInfer<StyleArguments<F>>
-  ): Extension<ExtensionProps<F>>;
+    ...bases: F & NoInfer<CheckedBases<F>>
+  ): Extension<BaseProps<F>>;
   function extend(...bases: ((props: Record<string, unknown>) => string)[]) {
     return (scheme: Conditions) => construct(scheme, bases);
   }
 
-  return Object.assign(ntv, { extend });
+  return Object.assign(construct, { extend });
 }

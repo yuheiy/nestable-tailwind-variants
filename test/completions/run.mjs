@@ -49,6 +49,7 @@ try {
         const stateKeys = ['isDisabled', 'isFocused', 'tone'];
         const cases = {
           'direct-choice': stateKeys,
+          'open-known': ['isDisabled'],
           'extended-default': [...stateKeys, 'size'],
           inherited: ['size'],
           'choice-values': ['primary', 'secondary', '$default'],

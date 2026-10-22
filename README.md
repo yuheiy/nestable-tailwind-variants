@@ -110,7 +110,7 @@ Selecting a string variant does not suppress the surrounding level’s `$default
 
 ## Type props
 
-Pass a props type to check condition names, variant values, and calls. Optional props allow a call without arguments. Required props require an argument with those props:
+Pass a props type to check condition names, variant values, and calls. If no props are required, you can call the style without arguments:
 
 ```ts
 const optional = ntv<{ size?: 'sm' | 'lg' }>({
@@ -178,9 +178,9 @@ button({ size: 'sm', className: 'p-8' });
 // => 'rounded text-sm p-8'
 ```
 
-With `twMerge`, later bases take precedence, followed by the extension scheme and the caller's `class` or `className`. Each base keeps its own defaults and merger. Required props remain required after extending.
+With `twMerge`, later bases take precedence, followed by the extension scheme and the caller's `class` or `className`. Each base keeps its own defaults and merger. Use `ntv.extend(...bases)({})` to combine bases without adding a scheme.
 
-Use `ntv.extend(...bases)({})` when you only need to combine bases. Bases can also be ordinary functions that accept a props object and return a class string. Inherited keys are checked without a type argument. To add new props outside a callback context, pass an explicit type argument as above.
+Extensions cannot add values to an inherited prop type. To add new props, pass a type argument as shown above.
 
 ## Use with React Aria Components
 

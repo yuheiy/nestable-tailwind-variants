@@ -49,11 +49,13 @@ describe('style props', () => {
     styles({ tone: 'other', count: 3 });
   });
 
-  it('allows omitted optional props and normalizes explicitly undefined values', () => {
+  it('preserves optional and required properties as declared', () => {
     const styles = ntv<{ tone?: 'primary'; size: 'sm' | undefined }>({
       tone: { primary: 'primary' },
       size: { sm: 'small' },
     });
+    ntv<{ tone?: 'primary' }>({})();
+    // @ts-expect-error A required property stays required when its value includes undefined.
     styles();
     styles({ size: undefined });
     // @ts-expect-error exactOptionalPropertyTypes distinguishes absent from explicit undefined.
@@ -117,6 +119,14 @@ describe('scheme validation', () => {
     ntv<{ count: number }>({
       // @ts-expect-error Non-style props cannot define conditions.
       count: { 1: 'one' },
+    });
+  });
+
+  it('accepts typed string index conditions', () => {
+    ntv<Record<string, 'primary'>>({ tone: { primary: 'primary' } });
+    ntv<Record<string, 'primary'>>({
+      // @ts-expect-error Choices must match the string index value type.
+      tone: { secondary: 'invalid' },
     });
   });
 

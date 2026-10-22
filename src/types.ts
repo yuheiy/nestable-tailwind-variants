@@ -8,6 +8,73 @@ export interface Options {
   twMerge: (...classes: ClassValue[]) => string;
 }
 
+type KnownProps<P> = {
+  [
+    K in keyof P as string extends K
+      ? never
+      : number extends K
+        ? never
+        : symbol extends K
+          ? never
+          : K
+  ]: P[K];
+};
+
+type Keys<P> = P extends unknown ? keyof P : never;
+
+type KnownKeys<P> = Keys<KnownProps<P>>;
+
+type DeclaredValue<P, K extends PropertyKey> = P extends unknown
+  ? K extends keyof P
+    ? Required<P>[K]
+    : never
+  : never;
+
+type BooleanKey<K extends string> = K extends `${'is' | 'allows'}${infer First}${string}`
+  ? First extends ''
+    ? false
+    : 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' extends `${string}${First}${string}`
+      ? true
+      : false
+  : false;
+
+type Branch<P, Open extends boolean> = ClassValue | SchemeFor<P, Open>;
+
+type Condition<P, K extends string, V, Open extends boolean> =
+  BooleanKey<K> extends true
+    ? [V] extends [boolean]
+      ? Branch<P, Open>
+      : never
+    : [V] extends [string]
+      ? { [Choice in Extract<V, string>]?: Branch<P, Open> } & { $default?: Branch<P, Open> }
+      : never;
+
+type Simplify<T> = { [K in keyof T]: T[K] };
+
+export type Scheme<P> = SchemeFor<P, false>;
+
+type SchemeFor<P, Open extends boolean> = Simplify<
+  {
+    $base?: ClassValue;
+    $default?: Branch<P, Open>;
+    class?: never;
+    className?: never;
+  } & {
+    [
+      K in Exclude<
+        (Open extends true ? KnownKeys<P> : Keys<P>) & string,
+        '$base' | '$default' | 'class' | 'className'
+      >
+    ]?: Condition<P, K, NonNullable<DeclaredValue<Open extends true ? KnownProps<P> : P, K>>, Open>;
+  } & {
+    [
+      K in keyof P & string as Open extends true ? (string extends K ? K : never) : never
+    ]?: unknown extends DeclaredValue<P, K>
+      ? Branch<P, Open>
+      : Condition<P, K, NonNullable<DeclaredValue<P, K>>, Open>;
+  }
+>;
+
 export type Conditions = { readonly [key: string]: ClassValue | Conditions };
 
 export type UntypedScheme = {
@@ -17,138 +84,110 @@ export type UntypedScheme = {
   className?: never;
 } & Conditions;
 
-type KnownProps<T> = {
-  [
-    K in keyof T as string extends K
-      ? never
-      : number extends K
-        ? never
-        : symbol extends K
-          ? never
-          : K
-  ]: T[K];
-};
-
-type IndexProps<T> = {
-  [
-    K in keyof T as string extends K ? K : number extends K ? K : symbol extends K ? K : never
-  ]: T[K];
-};
-
-type Keys<T> = T extends unknown ? keyof T : never;
-
-type Value<T, K extends PropertyKey> = T extends unknown
-  ? K extends keyof T
-    ? Exclude<T[K], undefined>
-    : never
+type ExclusiveProps<P, All = P> = P extends unknown
+  ? P & { [K in Exclude<KnownKeys<All>, keyof KnownProps<P>>]?: never }
   : never;
 
-type RequiredKeys<T> = T extends unknown
-  ? RequiredKeysOf<KnownProps<T>> | RequiredKeysOf<IndexProps<T>>
-  : never;
-
-type RequiredKeysOf<T> = { [K in keyof T]-?: undefined extends T[K] ? never : K }[keyof T];
-
-type Simplify<T> = { [K in keyof T]: T[K] };
-
-type IsBooleanKey<K extends string> = K extends `${'is' | 'allows'}${infer First}${infer _Rest}`
-  ? First extends ''
-    ? false
-    : 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' extends `${string}${First}${string}`
-      ? true
-      : false
-  : false;
-
-type Condition<P, K extends string, V = NonNullable<Value<P, K>>, Open extends boolean = false> =
-  IsBooleanKey<K> extends true
-    ? [V] extends [boolean]
-      ? ClassValue | SchemeFor<P, Open>
-      : never
-    : [V] extends [string]
-      ? { [Choice in Extract<V, string>]?: ClassValue | SchemeFor<P, Open> } & {
-          $default?: ClassValue | SchemeFor<P, Open>;
-        }
-      : never;
-
-export type Scheme<P> = SchemeFor<P, false>;
-
-type SchemeFor<P, Open extends boolean> = Simplify<
-  {
-    $base?: ClassValue;
-    $default?: ClassValue | SchemeFor<P, Open>;
-    class?: never;
-    className?: never;
-  } & {
-    [
-      K in Exclude<
-        Keys<Open extends true ? KnownProps<P> : P> & string,
-        '$base' | '$default' | 'class' | 'className'
-      >
-    ]?: Condition<P, K, NonNullable<Value<Open extends true ? KnownProps<P> : P, K>>, Open>;
-  } & {
-    [K in keyof IndexProps<P> & string as Open extends true ? K : never]?: unknown extends Value<
-      P,
-      K
-    >
-      ? ClassValue | SchemeFor<P, Open>
-      : Condition<P, K, NonNullable<Value<P, K>>, Open>;
-  }
->;
-
-type Normalize<P, All = P> = P extends unknown
-  ? NormalizeKnown<KnownProps<P>, KnownProps<All>> & IndexProps<P>
-  : never;
-
-type NormalizeKnown<P, All> = P extends unknown
-  ? Simplify<
-      { [K in RequiredKeys<P>]: P[K] } & {
-        [K in Exclude<keyof P, RequiredKeys<P>>]?: P[K];
-      } & { [K in Exclude<Keys<All>, keyof P>]?: never }
-    >
-  : never;
-
-type CallableStyle<P> = [RequiredKeys<P>] extends [never]
-  ? (props?: Normalize<P> & ClassProps) => string
-  : (props: Normalize<P> & ClassProps) => string;
+export type Style<P> = {} extends P
+  ? (props?: ExclusiveProps<P> & ClassProps) => string
+  : (props: ExclusiveProps<P> & ClassProps) => string;
 
 export type AnyStyle = (props: never) => string;
 
-export type StyleArguments<F extends readonly AnyStyle[]> = {
-  [K in keyof F]: Parameters<F[K]> extends [props?: object | undefined] ? F[K] : never;
+type WithoutOverrides<P> = {
+  [K in keyof P as K extends 'class' | 'className' ? never : K]: P[K];
 };
 
-type WithoutClasses<P> = P extends unknown
-  ? Omit<KnownProps<NonNullable<P>>, 'class' | 'className'> & IndexProps<NonNullable<P>>
+export type CheckedBases<F extends readonly AnyStyle[]> = CheckPossible<BaseProps<F>> & {
+  [K in keyof F]: Parameters<F[K]> extends [props?: object | undefined]
+    ? [WithoutOverrides<NonNullable<Parameters<F[K]>[0]>>] extends [
+        NonNullable<Parameters<F[K]>[0]>,
+      ]
+      ? F[K]
+      : never
+    : never;
+};
+
+export type BaseProps<F extends readonly AnyStyle[]> = F[number] extends (props: infer P) => string
+  ? WithoutOverrides<NonNullable<P>>
+  : object;
+
+type NumericKey<K> = K extends number
+  ? K
+  : K extends 'Infinity' | '-Infinity' | 'NaN'
+    ? number
+    : K extends `${infer N extends number}`
+      ? `${N}` extends K
+        ? N
+        : never
+      : never;
+
+type MatchingKeys<P, K extends PropertyKey> = P extends unknown
+  ? K extends keyof P
+    ? K
+    : K extends number
+      ? `${K}` extends keyof P
+        ? `${K}`
+        : never
+      : NumericKey<K> extends keyof P
+        ? NumericKey<K>
+        : never
   : never;
 
-type StyleProps<F extends AnyStyle> =
-  Parameters<F> extends [] ? object : WithoutClasses<NonNullable<Parameters<F>[0]>>;
+type WiderKeysAt<Base, P, K extends PropertyKey> = K extends unknown
+  ? [MatchingKeys<Base, K>] extends [never]
+    ? never
+    : [MatchingKeys<P, K>] extends [never]
+      ? never
+      : [DeclaredValue<P, MatchingKeys<P, K>>] extends [DeclaredValue<Base, MatchingKeys<Base, K>>]
+        ? never
+        : K
+  : never;
 
-type MergeValues<T> = Simplify<MergeEntries<KnownProps<T>> & MergeEntries<IndexProps<T>>>;
+type WiderKeys<Base, P> =
+  | WiderKeysAt<Base, P, KnownKeys<P> | KnownKeys<Base>>
+  | WiderKeysAt<Base, P, Keys<P> | Keys<Base>>;
 
-type MergeEntries<T> = Simplify<
-  { [K in RequiredKeys<T>]: Value<T, K> } & {
-    [K in Exclude<Keys<T>, RequiredKeys<T>>]?: Value<T, K>;
-  }
->;
+type CheckLocal<Base, P> = [WiderKeys<Base, P>] extends [never] ? unknown : never;
 
-type MergeProps<A, B> = A extends unknown
-  ? B extends unknown
-    ? MergeValues<A | B>
+type IndexValue<P, K extends PropertyKey> = (K extends string | number
+  ? string extends keyof P
+    ? P[string]
+    : unknown
+  : unknown) &
+  ([NumericKey<K>] extends [never] ? unknown : number extends keyof P ? P[number] : unknown) &
+  (K extends symbol ? (symbol extends keyof P ? P[symbol] : unknown) : unknown);
+
+type RequiredNeverKeys<P> = {
+  [K in keyof KnownProps<P>]-?: {} extends Pick<P, K>
+    ? never
+    : [P[K] & IndexValue<P, K>] extends [never]
+      ? K
+      : never;
+}[keyof KnownProps<P>];
+
+type UsableProps<P> = P extends unknown
+  ? [RequiredNeverKeys<P>] extends [never]
+    ? P
     : never
   : never;
 
-export type ExtensionProps<F extends readonly AnyStyle[]> = F extends readonly [
-  infer Head extends AnyStyle,
-  ...infer Tail extends AnyStyle[],
-]
-  ? MergeProps<StyleProps<Head>, ExtensionProps<Tail>>
-  : number extends F['length']
-    ? MergeValues<StyleProps<F[number]>>
-    : object;
+type CheckPossible<P> = [UsableProps<P>] extends [never] ? never : unknown;
 
-export type Style<P, Inferred = P> = ((props: Inferred & Normalize<P> & ClassProps) => string) &
-  CallableStyle<P>;
+type ContextStyle<Base, Args extends [props?: object | undefined]> = ((
+  ...args: Args & [props?: ExclusiveProps<Base & NonNullable<Args[0]>> & ClassProps]
+) => string) &
+  ((props?: ExclusiveProps<Base & NonNullable<Args[0]>> & ClassProps) => string);
+
+export interface Extension<Base> {
+  <Args extends [props?: object | undefined]>(
+    scheme: ({} extends Base ? SchemeFor<Base & NonNullable<Args[0]>, true> : never) &
+      NoInfer<CheckLocal<Base, NonNullable<Args[0]>>>,
+  ): ContextStyle<Base, Args>;
+  <P extends object = object>(
+    scheme: SchemeFor<Base & P, true> & NoInfer<CheckLocal<Base, P> & CheckPossible<Base & P>>,
+  ): Style<Base & P>;
+}
 
 export interface Ntv {
   <Args extends [props?: object | undefined]>(
@@ -157,22 +196,6 @@ export interface Ntv {
   <P extends object>(scheme: Scheme<P>): Style<P>;
   (scheme: UntypedScheme): Style<Record<string, unknown>>;
   extend<const F extends readonly AnyStyle[]>(
-    ...bases: F & NoInfer<StyleArguments<F>>
-  ): Extension<ExtensionProps<F>>;
-}
-
-type ExtensionScheme<Base, P> = SchemeFor<MergeProps<Base, P>, true>;
-
-type ContextStyle<Base, Args extends [props?: object | undefined]> = ((
-  ...args: Args & [props?: Normalize<MergeProps<Base, NonNullable<Args[0]>>> & ClassProps]
-) => string) &
-  ((props?: Normalize<MergeProps<Base, NonNullable<Args[0]>>> & ClassProps) => string);
-
-export interface Extension<Base> {
-  <Args extends [props?: object | undefined]>(
-    scheme: [RequiredKeys<Base>] extends [never]
-      ? ExtensionScheme<Base, NonNullable<Args[0]>>
-      : never,
-  ): ContextStyle<Base, Args>;
-  <P extends object = object>(scheme: ExtensionScheme<Base, P>): Style<MergeProps<Base, P>, P>;
+    ...bases: F & NoInfer<CheckedBases<F>>
+  ): Extension<BaseProps<F>>;
 }
