@@ -1,5 +1,5 @@
 import { twMerge } from 'tailwind-merge';
-import { describe, expectTypeOf, it } from 'vitest';
+import { describe, expectTypeOf, it } from 'vite-plus/test';
 
 import { createNtv } from '../src/index.js';
 

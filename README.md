@@ -348,8 +348,8 @@ Add `ntv` to `tailwindFunctions` in your Prettier configuration to sort classes 
 Add `ntv` to `functions` to lint classes in nested conditions with [eslint-plugin-tailwindcss](https://github.com/francoismassart/eslint-plugin-tailwindcss). Keep your existing TypeScript parser configuration.
 
 ```js
-import { defineConfig } from 'eslint/config';
 import tailwindcss from 'eslint-plugin-tailwindcss';
+import { defineConfig } from 'eslint/config';
 
 export default defineConfig([
   {
@@ -372,10 +372,10 @@ The `functions` list replaces the defaults. Include any other class helpers you 
 Add a selector for `ntv` to lint classes in nested conditions with [eslint-plugin-better-tailwindcss](https://github.com/schoero/eslint-plugin-better-tailwindcss). Keep your existing TypeScript parser configuration.
 
 ```js
-import { defineConfig } from 'eslint/config';
 import betterTailwindcss from 'eslint-plugin-better-tailwindcss';
 import { getDefaultSelectors } from 'eslint-plugin-better-tailwindcss/defaults';
 import { MatcherType, SelectorKind } from 'eslint-plugin-better-tailwindcss/types';
+import { defineConfig } from 'eslint/config';
 
 export default defineConfig([
   {
