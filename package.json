@@ -31,12 +31,13 @@
     "check": "oxfmt --check && oxlint",
     "check:fix": "oxlint --fix && oxfmt",
     "knip": "knip",
-    "test": "node --run test:unit && node --run test:declarations",
+    "test": "node --run test:unit && node --run test:declarations && node --run test:completions",
     "test:unit": "vitest --typecheck --run",
     "test:declarations": "node --run build && node test/declarations/run.mjs",
     "release": "bumpp",
     "prepare": "git config --local core.hooksPath .githooks",
-    "prepublishOnly": "node --run build"
+    "prepublishOnly": "node --run build",
+    "test:completions": "node test/completions/run.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",

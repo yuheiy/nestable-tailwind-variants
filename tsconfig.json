@@ -37,5 +37,5 @@
     "moduleDetection": "force",
     "skipLibCheck": true
   },
-  "exclude": ["dist", "test/declarations/fixtures"]
+  "exclude": ["dist", "test/declarations/fixtures", "test/completions/fixture.tsx"]
 }

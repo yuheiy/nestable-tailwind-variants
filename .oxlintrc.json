@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "ignorePatterns": ["test/declarations/fixtures/**"],
+  "ignorePatterns": ["test/declarations/fixtures/**", "test/completions/fixture.tsx"],
   "categories": {
     "correctness": "error",
     "perf": "error",

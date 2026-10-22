@@ -2,13 +2,12 @@ import type {
   AnyStyle,
   ClassProps,
   ClassValue,
-  CombinedProps,
   Conditions,
+  Extension,
+  ExtensionProps,
+  Ntv,
   Options,
-  Scheme,
-  Style,
   StyleArguments,
-  UntypedScheme,
 } from './types.js';
 
 function isConditions(value: ClassValue | Conditions): value is Conditions {
@@ -52,10 +51,11 @@ function resolve(value: ClassValue | Conditions, props: Record<string, unknown>)
   ];
 }
 
-export function createNtv({ twMerge }: Options) {
-  function ntv<P extends object>(scheme: Scheme<P>): Style<P>;
-  function ntv(scheme: UntypedScheme): Style<Record<string, unknown>>;
-  function ntv(scheme: Conditions) {
+export function createNtv({ twMerge }: Options): Ntv {
+  function construct(
+    scheme: Conditions,
+    bases: readonly ((props: Record<string, unknown>) => string)[] = [],
+  ) {
     for (const key of ['class', 'className']) {
       if (key in scheme) {
         throw new Error(`The "${key}" property is not allowed in ntv scheme. Use "$base" instead.`);
@@ -63,16 +63,19 @@ export function createNtv({ twMerge }: Options) {
     }
 
     return ({ class: class_, className, ...props }: Record<string, unknown> & ClassProps = {}) =>
-      twMerge(resolve(scheme, props), class_, className);
+      twMerge(...bases.map((base) => base(props)), resolve(scheme, props), class_, className);
   }
 
-  function combine<const F extends readonly AnyStyle[]>(
-    ...styles: F & StyleArguments<F>
-  ): Style<CombinedProps<F>>;
-  function combine(...styles: ((props: Record<string, unknown>) => string)[]) {
-    return ({ class: class_, className, ...props }: Record<string, unknown> & ClassProps = {}) =>
-      twMerge(...styles.map((style) => style(props)), class_, className);
+  function ntv(scheme: Conditions) {
+    return construct(scheme);
   }
 
-  return Object.assign(ntv, { combine });
+  function extend<const F extends readonly AnyStyle[]>(
+    ...bases: F & NoInfer<StyleArguments<F>>
+  ): Extension<ExtensionProps<F>>;
+  function extend(...bases: ((props: Record<string, unknown>) => string)[]) {
+    return (scheme: Conditions) => construct(scheme, bases);
+  }
+
+  return Object.assign(ntv, { extend });
 }

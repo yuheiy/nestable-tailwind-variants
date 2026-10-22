@@ -146,9 +146,9 @@ box({ className: ['shadow-lg', false, ['p-2']] });
 // => 'rounded shadow-lg p-2'
 ```
 
-## Combine styles
+## Extend styles
 
-Use `ntv.combine` to combine existing styles:
+Use `ntv.extend(...bases)(scheme)` to add a scheme to existing styles:
 
 ```ts
 const spacing = ntv<{ size: 'sm' | 'md' }>({
@@ -164,7 +164,12 @@ const color = ntv<{ tone?: 'primary' }>({
   tone: { primary: 'bg-blue-500' },
 });
 
-const button = ntv.combine(spacing, color);
+const button = ntv.extend(
+  spacing,
+  color,
+)<{ isDisabled?: boolean }>({
+  isDisabled: 'opacity-50',
+});
 
 button({ size: 'sm', tone: 'primary' });
 // => 'rounded text-sm p-4 bg-blue-500'
@@ -173,9 +178,9 @@ button({ size: 'sm', className: 'p-8' });
 // => 'rounded text-sm p-8'
 ```
 
-With `twMerge`, styles listed later take precedence. Pass `class` or `className` to override the result.
+With `twMerge`, later bases take precedence, followed by the extension scheme and the caller's `class` or `className`. Each base keeps its own defaults and merger. Required props remain required after extending.
 
-Required props remain required after combining.
+Use `ntv.extend(...bases)({})` when you only need to combine bases. Bases can also be ordinary functions that accept a props object and return a class string. Inherited keys are checked without a type argument. To add new props outside a callback context, pass an explicit type argument as above.
 
 ## Use with React Aria Components
 
